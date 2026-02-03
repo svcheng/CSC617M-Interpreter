@@ -1,7 +1,17 @@
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any, Optional
 
-from lark import Transformer
+from lark import Lark, Token, Transformer
+
+
+@dataclass
+class Identifier:
+    name: str
+    token: Token
+
+    def __str__(self):
+        return self.name
+
 
 # =====================
 # Program Structure
@@ -10,7 +20,6 @@ from lark import Transformer
 
 @dataclass
 class Program:
-    const_decs: list["ConstDec"]
     type_decs: list
     func_decs: list
     main_block: list
@@ -23,27 +32,28 @@ class Program:
 
 @dataclass
 class VarDec:
-    name: str
+    name: Identifier
+    # quotations below so that IDE does not complain that Type is not defined
     declared_type: Optional["Type"]
     init_value: Optional["Expr"]
 
 
 @dataclass
 class ConstDec:
-    name: str
+    name: Identifier
     value: "Expr"
 
 
 @dataclass
 class TypeDec:
-    name: str
-    field_list: list[tuple]
+    name: Identifier
+    field_list: list[tuple[Identifier, "Type"]]
 
 
 @dataclass
 class FuncDec:
-    name: str
-    args: Optional[list[tuple[str, "Type"]]]
+    name: Identifier
+    args: list[tuple[Identifier, "Type"]]
     return_type: Optional["Type"]
     body: list
 
@@ -53,13 +63,14 @@ class FuncDec:
 # =====================
 
 
+@dataclass
 class Type:
-    pass
+    name: str | Identifier
 
 
 @dataclass
 class NotArrayType(Type):
-    name: str
+    pass
 
 
 @dataclass
@@ -88,7 +99,7 @@ class Conditional:
 
 @dataclass
 class ForLoop:
-    iterator_name: str
+    iterator_name: Identifier
     init_val: "Expr"
     cond: "Expr"
     step: "Expr"
@@ -114,7 +125,7 @@ class ReturnStmt:
 
 @dataclass
 class PrintStmt:
-    value: str
+    value: "Expr"
 
 
 @dataclass
@@ -140,14 +151,14 @@ class Literal(Expr):
 
 @dataclass
 class ArrAccess(Expr):
-    array_name: str
+    array_name: Identifier
     indices: list["Expr"]
 
 
 @dataclass
 class FieldAccess(Expr):
-    record_name: str
-    attribute: str
+    record_name: Identifier
+    attribute: Identifier
 
 
 @dataclass
@@ -165,8 +176,8 @@ class BinOp(Expr):
 
 @dataclass
 class Invocation(Expr):
-    name: str
-    args: Optional[List[Expr]]
+    name: Identifier
+    args: list[Expr]
 
 
 ############################################################
@@ -174,7 +185,7 @@ class Invocation(Expr):
 ############################################################
 
 
-def new_bin_op(items, op: str, type_name: Optional[str] = None):
+def new_bin_op(items, op: str, type_name: Optional[Token | str] = None):
     left, right = items
     if type_name is not None:
         type = NotArrayType(type_name)
@@ -195,17 +206,16 @@ class ASTConstructor(Transformer):
         return items
 
     def IDENTIFIER(self, token):
-        return token.value
+        return Identifier(name=token.value, token=token)
 
     # =====================
     # Program Structure
     # =====================
 
     def program(self, items):
-        const_decs, type_decs, func_decs, main_block = items
+        type_decs, func_decs, main_block = items
 
         return Program(
-            const_decs=const_decs,
             type_decs=type_decs,
             func_decs=func_decs,
             main_block=main_block,
@@ -249,6 +259,8 @@ class ASTConstructor(Transformer):
 
     def func_dec(self, items):
         return_type, name, args, body = items
+        if args is None:
+            args = []
         return FuncDec(name=name, args=args, return_type=return_type, body=body)
 
     stmts_with_return = return_children
@@ -271,7 +283,7 @@ class ASTConstructor(Transformer):
     def array_type(self, items):
         base_type = items[0]
         size = items[2]
-        return ArrayType(base_type=base_type, size=size)
+        return ArrayType(name="arr", base_type=base_type, size=size)
 
     # =====================
     # Statements
@@ -284,7 +296,7 @@ class ASTConstructor(Transformer):
     def conditional(self, items):
         condition = items[1]
         then_block = items[2]
-        else_block = items[4] if len(items) > 5 else None
+        else_block = items[4] if len(items) > 3 else None
         return Conditional(
             condition=condition, then_block=then_block, else_block=else_block
         )
@@ -359,7 +371,7 @@ class ASTConstructor(Transformer):
 
     def invocation(self, items):
         name = items[0]
-        args = items[1]
+        args = items[1] if items[1] is not None else []
         return Invocation(type=None, name=name, args=args)
 
     # =====================
@@ -404,3 +416,20 @@ class ASTConstructor(Transformer):
 
     def lnot(self, items):
         return UnaryOp(type=None, op="!", arg=items[0])
+
+
+# testing
+if __name__ == "__main__":
+    parser = Lark.open("grammar.lark", start="program", parser="lalr")
+    s = """
+    main: {
+        var if = 5;
+        let b = false;
+    }
+    """
+    parse_tree = parser.parse(s)
+    print(parse_tree.pretty())
+    print()
+
+    ast = ASTConstructor().transform(parse_tree)
+    print(ast)

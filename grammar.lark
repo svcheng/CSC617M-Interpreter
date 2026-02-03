@@ -8,7 +8,10 @@
 %import common.SIGNED_INT       -> INT
 %import common.SIGNED_FLOAT     -> FLOAT
 %import common.ESCAPED_STRING   -> STRVAL
-%import common.CNAME            -> IDENTIFIER
+%import common.CNAME
+
+
+IDENTIFIER.-1: CNAME // lower priority
 
 BOOLVAL: "true" | "false"
 CHARVAL: "'" /[A-Za-z!@#Vjdd$%^&*()_+=\-{}\[\]:;"'<>,.?]/ "'"
@@ -29,8 +32,8 @@ RECORD: "record"
 INT_T: "int"
 FLOAT_T: "float"
 BOOL_T: "bool"
-STR_T: "str"
 CHAR_T: "char"
+STR_T: "str"
 ARR: "arr"
 VOID: "void"
 PRINT: "print"
@@ -40,9 +43,8 @@ SCAN: "scan"
 // Program Structure
 // =====================
 
-program: const_decs type_decs func_decs main_block
+program: type_decs func_decs main_block
 
-const_decs: (const_dec)*
 type_decs: (type_dec)*
 func_decs: (func_dec)*
 
@@ -52,13 +54,14 @@ stmts: stmt*
 
 ?stmt: const_dec
      | var_dec
-     | print_stmt
-     | scan_stmt
      | assignment
      | conditional
      | for_loop
      | while_loop
      | repeat_loop
+     | return_stmt
+     | print_stmt
+     | scan_stmt
      | invocation ";"
 
 // =====================
@@ -73,8 +76,7 @@ type_dec: RECORD IDENTIFIER "{" field_list "}"
 field_list: field ("," field)*
 field: IDENTIFIER ":" datatype
 
-func_dec: (datatype | VOID) IDENTIFIER "(" [field_list] ")" "{" stmts_with_return "}"
-stmts_with_return: (stmt | return_stmt)*
+func_dec: (datatype | VOID) IDENTIFIER "(" [field_list] ")" "{" stmts "}"
 
 // =====================
 // Types
@@ -87,6 +89,7 @@ not_array_type: basic_type
 basic_type: INT_T
           | FLOAT_T
           | BOOL_T
+          | CHAR_T
           | STR_T
 array_type: not_array_type ARR "[" exprs "]"
 
@@ -116,9 +119,6 @@ scan_stmt: SCAN "(" lvalue ")" ";"
 // Expressions
 // =====================
 
-// ?expr: arith_expr
-//      | bool_expr
-
 ?scalar: literal
         | IDENTIFIER
         | arr_access
@@ -135,44 +135,6 @@ field_access: IDENTIFIER "." IDENTIFIER
 
 invocation: IDENTIFIER "(" [exprs] ")"
 exprs: expr ("," expr)*
-
-
-// Arithmetic
-// ?arith_expr: arith_expr "+" term   -> add
-//            | arith_expr "-" term   -> sub
-//            | term
-
-// ?term: term "*" factor            -> mul
-//      | term "/" factor            -> div
-//      | factor
-
-// ?factor: scalar
-//        | "(" arith_expr ")"
-
-// // Relational
-// ?rel_expr: rel_expr "==" rel_term  -> eq
-//          | rel_expr "!=" rel_term  -> ne
-//          | rel_term
-
-// ?rel_term: rel_term "<" rel_factor  -> lt
-//          | rel_term "<=" rel_factor -> le
-//          | rel_term ">" rel_factor  -> gt
-//          | rel_term ">=" rel_factor -> ge
-//          | rel_factor
-
-// ?rel_factor: scalar
-//            | "(" rel_expr ")"
-
-// // Boolean
-// ?bool_expr: bool_expr "||" bool_term    -> lor
-//           | bool_term
-
-// ?bool_term: bool_term "&&" bool_factor  -> land
-//           | bool_factor
-
-// ?bool_factor: rel_expr
-//             | "(" bool_expr ")"
-//             | "!" bool_expr             -> lnot
 
 ?expr: expr "||" e1      -> lor
      | e1
