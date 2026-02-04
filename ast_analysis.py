@@ -8,30 +8,25 @@ from ast_constructor import (
     BinOp,
     Conditional,
     ConstDec,
-    Expr,
     FieldAccess,
     ForLoop,
     FuncDec,
     Identifier,
     Invocation,
-    Literal,
     NotArrayType,
     PrintStmt,
     Program,
     RepeatLoop,
     ReturnStmt,
     ScanStmt,
+    Scope,
     Type,
     TypeDec,
     UnaryOp,
     VarDec,
+    VarInfo,
     WhileLoop,
 )
-
-CONSTANT = "constant"
-VARIABLE = "variable"
-CUSTOM_TYPE = "custom_type"
-FUNCTION = "function"
 
 RESERVED_WORDS = {
     "true",
@@ -60,15 +55,16 @@ RESERVED_WORDS = {
 BASIC_TYPES = {"int", "float", "bool", "char", "str"}
 type_table: dict[str, TypeDec | None] = {k: None for k in BASIC_TYPES}
 func_table: dict[str, FuncDec] = dict()
-var_table: dict[str, tuple[str, Type | None]] = dict()
+warnings = []
 
 
 # given the name of a record variable, returns its type
-def get_record_type(record_var: str):
-    var_type = var_table[record_var][1]
-    var_type_name = str(
-        var_type.name
-    )  # is not None because record variables always declared with type
+def get_record_type(record_var: str, scope: Scope):
+    var_type = scope.var_table[record_var].datatype
+    # should pass because record variables always declared with type
+    assert var_type is not None
+
+    var_type_name = str(var_type.name)
     return type_table[var_type_name]
 
 
@@ -106,7 +102,9 @@ def build_type_and_function_tables(program: Program):
 
     for func_dec in program.func_decs:
         func_name = str(func_dec.name)
-        if func_table.get(func_name) is not None:
+        if func_name in type_table:
+            raise Exception(f"{func_name} is already defined as a custom type.")
+        if func_name in func_table:
             raise Exception(f'Redefinition of function "{func_name}".')
 
         # check arguments
@@ -127,21 +125,21 @@ def build_type_and_function_tables(program: Program):
 # checks for return statements not in function declarations
 def check_misplaced_returns(node):
     match node:
-        case Program(_, _, body):
+        case Program(_, _, _, body):
             for stmt in body:
                 check_misplaced_returns(stmt)
         case ReturnStmt():
             raise Exception("Return statement outside of function declaration.")
-        case Conditional(_, then_block, else_block):
+        case Conditional(_, _, then_block, else_block):
             for stmt in then_block:
                 check_misplaced_returns(stmt)
             if else_block is not None:
                 for stmt in else_block:
                     check_misplaced_returns(stmt)
-        case ForLoop(_, _, _, _, body):
+        case ForLoop(_, _, _, _, _, body):
             for stmt in body:
                 check_misplaced_returns(stmt)
-        case WhileLoop(_, body) | RepeatLoop(_, body):
+        case WhileLoop(_, _, body) | RepeatLoop(_, _, body):
             for stmt in body:
                 check_misplaced_returns(stmt)
         case _:
@@ -154,7 +152,7 @@ def check_return_stmts(func_dec: FuncDec):
 
     def visit(node):
         match node:
-            case ReturnStmt(value):
+            case ReturnStmt(_, value):
                 if func_dec.return_type is None and value is not None:
                     raise Exception(
                         f'Returning value in body of void function "{func_name}".'
@@ -163,16 +161,16 @@ def check_return_stmts(func_dec: FuncDec):
                     raise Exception(
                         f'Non-void function "{func_name}" should return a value.'
                     )
-            case Conditional(_, then_block, else_block):
+            case Conditional(_, _, then_block, else_block):
                 for stmt in then_block:
                     visit(stmt)
                 if else_block is not None:
                     for stmt in else_block:
                         visit(stmt)
-            case ForLoop(_, _, _, _, body):
+            case ForLoop(_, _, _, _, _, body):
                 for stmt in body:
                     visit(stmt)
-            case WhileLoop(_, body) | RepeatLoop(_, body):
+            case WhileLoop(_, _, body) | RepeatLoop(_, _, body):
                 for stmt in body:
                     visit(stmt)
             case _:
@@ -182,40 +180,51 @@ def check_return_stmts(func_dec: FuncDec):
         visit(stmt)
 
 
-# builds symbol table while checking for improper use of identifiers
-def build_var_table(node):
+# builds symbol tables while checking for improper use of identifiers
+def build_var_tables(node, cur_scope: Scope):
     match node:
-        case Program(_, _, main_block):
+        case Program(_, _, _, main_block):
+            node.scope = cur_scope
             for stmt in main_block:
-                build_var_table(stmt)
+                build_var_tables(stmt, node.scope)
 
-        case ConstDec(name, value):
+        case ConstDec(_, name, value):
+            node.scope = cur_scope
             name = str(name)
 
             if name in RESERVED_WORDS:
                 raise Exception(
                     f'Invalid identifier name: "{name}" is a reserved word.'
                 )
-            if name in var_table:
+            if name in type_table:
+                raise Exception(f'"{name}" is already defined as a custom type.')
+            if name in func_table:
+                raise Exception(f'"{name}" is already defined as a function.')
+            if cur_scope.var_name_in_scope(name):
                 raise Exception(f"Name {name} has already been defined.")
 
-            build_var_table(value)
-            var_table[name] = (CONSTANT, None)
-        case VarDec(name, declared_type, init_val):
+            build_var_tables(value, cur_scope)
+            cur_scope.insert_varname(name, VarInfo(True, None))
+        case VarDec(_, name, declared_type, init_val):
+            node.scope = cur_scope
             name = str(name)
 
             if name in RESERVED_WORDS:
                 raise Exception(
                     f'Invalid identifier name: "{name}" is a reserved word.'
                 )
-            if name in var_table:
+            if name in type_table:
+                raise Exception(f'"{name}" is already defined as a custom type.')
+            if name in func_table:
+                raise Exception(f'"{name}" is already defined as a function.')
+            if cur_scope.var_name_in_scope(name):
                 raise Exception(f"Name {name} has already been defined.")
 
             # check that declared type is valid
             if isinstance(declared_type, ArrayType):
                 # check array dimensions for undeclared vars
                 for dim in declared_type.size:
-                    build_var_table(dim)
+                    build_var_tables(dim, cur_scope)
             elif (
                 declared_type is not None and str(declared_type.name) not in type_table
             ):
@@ -223,68 +232,107 @@ def build_var_table(node):
 
             # check initial value
             if init_val is not None:
-                build_var_table(init_val)
-            var_table[name] = (VARIABLE, declared_type)
+                build_var_tables(init_val, cur_scope)
+            cur_scope.insert_varname(name, VarInfo(False, declared_type))
 
         ###############
-        # Statements
+        # Other Statements
         ###############
-        case Assignment(lval, rval):
-            build_var_table(lval)
-            build_var_table(rval)
-        case Conditional(condition, then_block, else_block):
-            build_var_table(condition)
+        case Assignment(_, lval, rval):
+            node.scope = cur_scope
+            build_var_tables(lval, cur_scope)
+            build_var_tables(rval, cur_scope)
+            # no constant assignment
+            if cur_scope.var_is_constant(str(lval)):
+                raise Exception("Constant values cannot be reassigned.")
+        case Conditional(_, condition, then_block, else_block):
+            node.scope = cur_scope
+            build_var_tables(condition, cur_scope)
+
+            # if and else blocks have separate scopes
+            then_scope = Scope(cur_scope, dict())
             for stmt in then_block:
-                build_var_table(stmt)
+                build_var_tables(stmt, then_scope)
+
+            else_scope = Scope(cur_scope, dict())
             if else_block is not None:
                 for stmt in else_block:
-                    build_var_table(stmt)
-        case ForLoop(iterator_name, init_val, cond, step, body):
-            var_table[str(iterator_name)] = (VARIABLE, NotArrayType("int"))
-            build_var_table(init_val)
-            build_var_table(cond)
-            build_var_table(step)
+                    build_var_tables(stmt, else_scope)
+
+            # add symbols declared in if/else blocks so that user may be warned
+            for var_name, var_info in then_scope.var_table.items():
+                new_info = VarInfo(var_info.is_constant, var_info.datatype, True)
+                cur_scope.insert_varname(var_name, new_info)
+            for var_name, var_info in else_scope.var_table.items():
+                new_info = VarInfo(var_info.is_constant, var_info.datatype, True)
+                cur_scope.insert_varname(var_name, new_info)
+
+        case ForLoop(_, iterator_name, init_val, cond, step, body):
+            node.scope = Scope(cur_scope, dict())
+            node.scope.insert_varname(
+                str(iterator_name), VarInfo(False, NotArrayType("int"))
+            )
+            build_var_tables(init_val, cur_scope)
+            build_var_tables(cond, cur_scope)
+            build_var_tables(step, cur_scope)
             for stmt in body:
-                build_var_table(stmt)
-        case WhileLoop(cond, body) | RepeatLoop(cond, body):
-            build_var_table(cond)
+                build_var_tables(stmt, node.scope)
+        case WhileLoop(_, cond, body) | RepeatLoop(_, cond, body):
+            node.scope = cur_scope
+            build_var_tables(cond, cur_scope)
             for stmt in body:
-                build_var_table(stmt)
-        case ReturnStmt(value):
+                build_var_tables(stmt, cur_scope)
+        case ReturnStmt(_, value):
+            node.scope = cur_scope
             if value is not None:
-                build_var_table(value)
-        case PrintStmt(value):
-            build_var_table(value)
-        case ScanStmt(lval):
-            build_var_table(lval)
+                build_var_tables(value, cur_scope)
+        case PrintStmt(_, value):
+            node.scope = cur_scope
+            build_var_tables(value, cur_scope)
+        case ScanStmt(_, lval):
+            node.scope = cur_scope
+            build_var_tables(lval, cur_scope)
 
         ###############
         # Expressions
         ###############
-        case Identifier(name, _):  # for identifiers in expressions
-            if name not in var_table:
+        case Identifier(_, name, _):  # for identifiers in expressions and assignment
+            node.scope = cur_scope
+            if not cur_scope.var_name_in_scope(name):
                 raise Exception(f'"{name}" is not a defined variable.')
-        case ArrAccess(_, array_name, indices):
-            build_var_table(array_name)
+
+            # warn user if variable referenced was declared in a conditional
+            if cur_scope.conditionally_defined(name):
+                warnings.append(
+                    f'Variable/Constant "{name}" was declared in a conditional body and may not be defined.'
+                )
+        case ArrAccess(_, _, array_name, indices):
+            node.scope = cur_scope
+            build_var_tables(array_name, cur_scope)
             for idx in indices:
-                build_var_table(idx)
-        case FieldAccess(_, record_name, attribute):
+                build_var_tables(idx, cur_scope)
+        case FieldAccess(_, _, record_name, attribute):
+            node.scope = cur_scope
             record_name, attribute = str(record_name), str(attribute)
-            if record_name not in var_table:
+            if not cur_scope.var_name_in_scope(record_name):
                 raise Exception(f'There is no variable named "{record_name}".')
 
             # check that the record has that attribute
-            var_type = get_record_type(record_name)
+            var_type = get_record_type(record_name, cur_scope)
+            assert var_type is not None
             if attribute not in [str(name) for name, _ in var_type.field_list]:
                 raise Exception(
                     f'Type "{str(var_type.name)}" does not have attribute "{attribute}".'
                 )
-        case UnaryOp(_, _, arg):
-            build_var_table(arg)
-        case BinOp(_, _, left, right):
-            build_var_table(left)
-            build_var_table(right)
-        case Invocation(_, name, args):
+        case UnaryOp(_, _, _, arg):
+            node.scope = cur_scope
+            build_var_tables(arg, cur_scope)
+        case BinOp(_, _, _, left, right):
+            node.scope = cur_scope
+            build_var_tables(left, cur_scope)
+            build_var_tables(right, cur_scope)
+        case Invocation(_, _, name, args):
+            node.scope = cur_scope
             name = str(name)
             # check that function exists
             if name not in func_table:
@@ -299,31 +347,33 @@ def build_var_table(node):
                 )
 
             for arg in args:
-                build_var_table(arg)
+                build_var_tables(arg, cur_scope)
         case _:
             pass
+
+
+# enforces syntax and some semantics
+def analyze(ast):
+    build_type_and_function_tables(ast)
+    for func_dec in ast.func_decs:
+        check_return_stmts(func_dec)
+    check_misplaced_returns(ast)
+    build_var_tables(ast, Scope(None, dict()))
 
 
 # tests
 if __name__ == "__main__":
     s = """
-    void func() {
-        return;
-    }
+    record pair {x: int}
+    void func() {}
     main: {
-        var let = 5;
+        let x = 5;
+        var z: int;
+        func();
     }
     """
     parser = Lark.open("grammar.lark", start="program", parser="lalr")
     parse_tree = parser.parse(s)
     ast = ASTConstructor().transform(parse_tree)
-
-    build_type_and_function_tables(ast)
-    for func_dec in ast.func_decs:
-        check_return_stmts(func_dec)
-    check_misplaced_returns(ast)
-
-    build_var_table(ast)
-
-    for k, v in var_table.items():
-        print(k, v)
+    analyze(ast)
+    print(warnings)

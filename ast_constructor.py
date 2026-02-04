@@ -1,16 +1,65 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Optional, Self
 
 from lark import Lark, Token, Transformer
 
+# =====================
+# Auxialliary info useful for syntax and semantic checking
+# =====================
+
 
 @dataclass
-class Identifier:
-    name: str
-    token: Token
+class VarInfo:
+    is_constant: bool
+    datatype: Optional["Type"]  # datatype=None for variables declared with assignment
+    declared_in_cond_block: bool = False
 
-    def __str__(self):
-        return self.name
+
+@dataclass
+class Scope:
+    parent_scope: Optional[Self]  # has type Scope or None
+    var_table: dict[str, VarInfo]
+
+    def var_name_in_scope(self, var_name: str) -> bool:
+        if var_name in self.var_table:
+            return True
+        elif self.parent_scope is not None and self.parent_scope.var_name_in_scope(
+            var_name
+        ):
+            return True
+
+        return False
+
+    def insert_varname(self, var_name: str, var_info: VarInfo) -> None:
+        self.var_table[var_name] = var_info
+
+    def get_var_info(self, var_name: str) -> Optional[VarInfo]:
+        if var_name in self.var_table:
+            return self.var_table[var_name]
+        elif self.parent_scope is not None:
+            return self.parent_scope.get_var_info(var_name)
+        else:
+            return None
+
+    def var_is_constant(self, var_name) -> bool:
+        var_info = self.get_var_info(var_name)
+        if var_info is None:
+            return False
+
+        return var_info.is_constant
+
+    def conditionally_defined(self, var_name: str) -> bool:
+        var_info = self.get_var_info(var_name)
+        if var_info is None:
+            return False
+
+        return var_info.declared_in_cond_block
+
+
+@dataclass
+class Node:
+    # will always be assigned None during ast construction, to be determined during syntax checking
+    scope: Optional[Scope]
 
 
 # =====================
@@ -19,7 +68,16 @@ class Identifier:
 
 
 @dataclass
-class Program:
+class Identifier(Node):
+    name: str
+    token: Token
+
+    def __str__(self):
+        return self.name
+
+
+@dataclass
+class Program(Node):
     type_decs: list
     func_decs: list
     main_block: list
@@ -31,7 +89,7 @@ class Program:
 
 
 @dataclass
-class VarDec:
+class VarDec(Node):
     name: Identifier
     # quotations below so that IDE does not complain that Type is not defined
     declared_type: Optional["Type"]
@@ -39,7 +97,7 @@ class VarDec:
 
 
 @dataclass
-class ConstDec:
+class ConstDec(Node):
     name: Identifier
     value: "Expr"
 
@@ -51,7 +109,7 @@ class TypeDec:
 
 
 @dataclass
-class FuncDec:
+class FuncDec(Node):
     name: Identifier
     args: list[tuple[Identifier, "Type"]]
     return_type: Optional["Type"]
@@ -85,20 +143,20 @@ class ArrayType(Type):
 
 
 @dataclass
-class Assignment:
+class Assignment(Node):
     lval: "Expr"
     rval: "Expr"
 
 
 @dataclass
-class Conditional:
+class Conditional(Node):
     condition: "Expr"
     then_block: list
     else_block: Optional[list]
 
 
 @dataclass
-class ForLoop:
+class ForLoop(Node):
     iterator_name: Identifier
     init_val: "Expr"
     cond: "Expr"
@@ -107,29 +165,29 @@ class ForLoop:
 
 
 @dataclass
-class WhileLoop:
+class WhileLoop(Node):
     cond: "Expr"
     body: list
 
 
 @dataclass
-class RepeatLoop:
+class RepeatLoop(Node):
     cond: "Expr"
     body: list
 
 
 @dataclass
-class ReturnStmt:
+class ReturnStmt(Node):
     value: Optional["Expr"]
 
 
 @dataclass
-class PrintStmt:
+class PrintStmt(Node):
     value: "Expr"
 
 
 @dataclass
-class ScanStmt:
+class ScanStmt(Node):
     lval: "Expr"
 
 
@@ -139,7 +197,7 @@ class ScanStmt:
 
 
 @dataclass
-class Expr:
+class Expr(Node):
     type: Optional[Type]  # type of None means type is still unknown
 
 
@@ -191,7 +249,7 @@ def new_bin_op(items, op: str, type_name: Optional[Token | str] = None):
         type = NotArrayType(type_name)
     else:
         type = None
-    return BinOp(type=type, op=op, left=left, right=right)
+    return BinOp(scope=None, type=type, op=op, left=left, right=right)
 
 
 def new_bool_op(items, op: str):
@@ -206,7 +264,7 @@ class ASTConstructor(Transformer):
         return items
 
     def IDENTIFIER(self, token):
-        return Identifier(name=token.value, token=token)
+        return Identifier(scope=None, name=token.value, token=token)
 
     # =====================
     # Program Structure
@@ -216,6 +274,7 @@ class ASTConstructor(Transformer):
         type_decs, func_decs, main_block = items
 
         return Program(
+            scope=None,
             type_decs=type_decs,
             func_decs=func_decs,
             main_block=main_block,
@@ -236,15 +295,17 @@ class ASTConstructor(Transformer):
 
     def const_dec(self, items):
         _, name, value = items
-        return ConstDec(name=name, value=value)
+        return ConstDec(scope=None, name=name, value=value)
 
     def var_dec_no_assign(self, items):
         _, name, declared_type = items
-        return VarDec(name=name, declared_type=declared_type, init_value=None)
+        return VarDec(
+            scope=None, name=name, declared_type=declared_type, init_value=None
+        )
 
     def var_dec_assign(self, items):
         _, name, init_value = items
-        return VarDec(name=name, declared_type=None, init_value=init_value)
+        return VarDec(scope=None, name=name, declared_type=None, init_value=init_value)
 
     def type_dec(self, items):
         name = items[1]
@@ -261,7 +322,9 @@ class ASTConstructor(Transformer):
         return_type, name, args, body = items
         if args is None:
             args = []
-        return FuncDec(name=name, args=args, return_type=return_type, body=body)
+        return FuncDec(
+            scope=None, name=name, args=args, return_type=return_type, body=body
+        )
 
     stmts_with_return = return_children
 
@@ -291,19 +354,23 @@ class ASTConstructor(Transformer):
 
     def assignment(self, items):
         lval, rval = items
-        return Assignment(lval=lval, rval=rval)
+        return Assignment(scope=None, lval=lval, rval=rval)
 
     def conditional(self, items):
         condition = items[1]
         then_block = items[2]
         else_block = items[4] if len(items) > 3 else None
         return Conditional(
-            condition=condition, then_block=then_block, else_block=else_block
+            scope=None,
+            condition=condition,
+            then_block=then_block,
+            else_block=else_block,
         )
 
     def for_loop(self, items):
         _, iterator_name, init_val, cond, step, body = items
         return ForLoop(
+            scope=None,
             iterator_name=iterator_name,
             init_val=init_val,
             cond=cond,
@@ -313,23 +380,23 @@ class ASTConstructor(Transformer):
 
     def while_loop(self, items):
         _, cond, body = items
-        return WhileLoop(cond=cond, body=body)
+        return WhileLoop(scope=None, cond=cond, body=body)
 
     def repeat_loop(self, items):
         _, body, _, cond = items
-        return RepeatLoop(cond=cond, body=body)
+        return RepeatLoop(scope=None, cond=cond, body=body)
 
     def return_stmt(self, items):
         value = items[1] if len(items) > 1 else None
-        return ReturnStmt(value=value)
+        return ReturnStmt(scope=None, value=value)
 
     def print_stmt(self, items):
         value = items[1]
-        return PrintStmt(value=value)
+        return PrintStmt(scope=None, value=value)
 
     def scan_stmt(self, items):
         lval = items[1]
-        return ScanStmt(lval=lval)
+        return ScanStmt(scope=None, lval=lval)
 
     # =====================
     # Expressions: Scalars
@@ -338,41 +405,55 @@ class ASTConstructor(Transformer):
     def int_literal(self, items):
         raw_value = items[0].value
         return Literal(
-            type=NotArrayType("int"), raw_value=raw_value, value=int(raw_value)
+            scope=None,
+            type=NotArrayType("int"),
+            raw_value=raw_value,
+            value=int(raw_value),
         )
 
     def float_literal(self, items):
         raw_value = items[0].value
         return Literal(
-            type=NotArrayType("float"), raw_value=raw_value, value=float(raw_value)
+            scope=None,
+            type=NotArrayType("float"),
+            raw_value=raw_value,
+            value=float(raw_value),
         )
 
     def bool_literal(self, items):
         raw_value = items[0].value
         return Literal(
-            type=NotArrayType("bool"), raw_value=raw_value, value=(raw_value == "true")
+            scope=None,
+            type=NotArrayType("bool"),
+            raw_value=raw_value,
+            value=(raw_value == "true"),
         )
 
     def str_literal(self, items):
         raw_value = items[0].value
         return Literal(
-            type=NotArrayType("string"), raw_value=raw_value, value=raw_value[1:-1]
+            scope=None,
+            type=NotArrayType("string"),
+            raw_value=raw_value,
+            value=raw_value[1:-1],
         )
 
     def arr_access(self, items):
         array_name, indices = items
-        return ArrAccess(type=None, array_name=array_name, indices=indices)
+        return ArrAccess(scope=None, type=None, array_name=array_name, indices=indices)
 
     def field_access(self, items):
         recordname, attribute = items
-        return FieldAccess(type=None, record_name=recordname, attribute=attribute)
+        return FieldAccess(
+            scope=None, type=None, record_name=recordname, attribute=attribute
+        )
 
     exprs = return_children
 
     def invocation(self, items):
         name = items[0]
         args = items[1] if items[1] is not None else []
-        return Invocation(type=None, name=name, args=args)
+        return Invocation(scope=None, type=None, name=name, args=args)
 
     # =====================
     # Expressions: Operations
@@ -415,7 +496,7 @@ class ASTConstructor(Transformer):
         return new_bool_op(items, op="&&")
 
     def lnot(self, items):
-        return UnaryOp(type=None, op="!", arg=items[0])
+        return UnaryOp(scope=None, type=None, op="!", arg=items[0])
 
 
 # testing
@@ -423,13 +504,11 @@ if __name__ == "__main__":
     parser = Lark.open("grammar.lark", start="program", parser="lalr")
     s = """
     main: {
-        var if = 5;
-        let b = false;
+        var x: int;
     }
     """
     parse_tree = parser.parse(s)
     print(parse_tree.pretty())
-    print()
 
     ast = ASTConstructor().transform(parse_tree)
     print(ast)

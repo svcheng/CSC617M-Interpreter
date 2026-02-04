@@ -4,12 +4,15 @@ Other syntax rules (besides grammar rules)
     - functions should be passed the correct number of parameters (done)
     - return statements should only be in function bodies (done)
     - void functions should not return values and non-void functions should return values (done)
-- variables/arguments should only be assigned types that have been defined (done)
-- identifiers should not be used before declared (done but without scoping)
+- declarations
+    - variables/arguments should only be assigned types that have been defined (done)
+    - identifiers should not be reused (except var decs where the previous declarations were in lower-level scopes) (done)
+    - identifiers should not be used before declared (done)
+    - identifiers should not be keywords (done)
 
 Semantics
-- constants cannot be re-assigned
-- scoping rules
+- constants cannot be re-assigned (done)
+- scoping rules when variables are referenced
 - type checking
     - check that types are correct: operands, function parameters (including print and scan), assignment rvalues, for loop parameters, conditions, etc.
     - type casting in arithmetic ops between numbers (int to float)
