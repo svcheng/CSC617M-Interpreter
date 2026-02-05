@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Any, Optional, Self
 
-from lark import Lark, Token, Transformer
+from lark import Lark, Token, Transformer, v_args
+from lark.tree import Meta
 
 # =====================
 # Auxialliary info useful for syntax and semantic checking
@@ -57,9 +58,42 @@ class Scope:
 
 
 @dataclass
+class MetaInfo:
+    start_line: int
+    end_line: int
+    start_col: int
+    end_col: int
+    start_pos: int
+    end_pos: int
+
+    @staticmethod
+    def from_meta(meta: Meta):
+        return MetaInfo(
+            meta.line,
+            meta.end_line,
+            meta.column,
+            meta.end_column,
+            meta.start_pos,
+            meta.end_pos,
+        )
+
+    @staticmethod
+    def from_token(token: Token):
+        return MetaInfo(
+            token.line,
+            token.end_line,
+            token.column,
+            token.end_column,
+            token.start_pos,
+            token.end_pos,
+        )
+
+
+@dataclass
 class Node:
     # will always be assigned None during ast construction, to be determined during syntax checking
     scope: Optional[Scope]
+    meta_info: MetaInfo  # contains info about the rule matched like the line number, col number, etc.
 
 
 # =====================
@@ -70,7 +104,6 @@ class Node:
 @dataclass
 class Identifier(Node):
     name: str
-    token: Token
 
     def __str__(self):
         return self.name
@@ -78,8 +111,8 @@ class Identifier(Node):
 
 @dataclass
 class Program(Node):
-    type_decs: list
-    func_decs: list
+    type_decs: list["TypeDec"]
+    func_decs: list["FuncDec"]
     main_block: list
 
 
@@ -103,7 +136,7 @@ class ConstDec(Node):
 
 
 @dataclass
-class TypeDec:
+class TypeDec(Node):
     name: Identifier
     field_list: list[tuple[Identifier, "Type"]]
 
@@ -198,13 +231,13 @@ class ScanStmt(Node):
 
 @dataclass
 class Expr(Node):
-    type: Optional[Type]  # type of None means type is still unknown
+    pass
 
 
 @dataclass
 class Literal(Expr):
-    raw_value: str
     value: Any
+    datatype: Optional[Type]  # type of None means type is still unknown
 
 
 @dataclass
@@ -243,38 +276,41 @@ class Invocation(Expr):
 ############################################################
 
 
-def new_bin_op(items, op: str, type_name: Optional[Token | str] = None):
-    left, right = items
-    if type_name is not None:
-        type = NotArrayType(type_name)
-    else:
-        type = None
-    return BinOp(scope=None, type=type, op=op, left=left, right=right)
+def new_bin_op(meta, children, op: str):
+    left, right = children
+    return BinOp(
+        scope=None, meta_info=MetaInfo.from_meta(meta), op=op, left=left, right=right
+    )
 
 
-def new_bool_op(items, op: str):
-    return new_bin_op(items=items, op=op, type_name="bool")
+def new_bool_op(meta, children, op: str):
+    return new_bin_op(meta=meta, children=children, op=op)
 
 
+@v_args(meta=True)
 class ASTConstructor(Transformer):
-    def return_fst(self, items):
-        return items[0]
+    def return_fst(self, _, children):
+        return children[0]
 
-    def return_children(self, items):
-        return items
+    def return_children(self, _, children):
+        return children
 
     def IDENTIFIER(self, token):
-        return Identifier(scope=None, name=token.value, token=token)
+        return Identifier(
+            scope=None,
+            meta_info=MetaInfo.from_token(token),
+            name=token.value,
+        )
 
     # =====================
     # Program Structure
     # =====================
 
-    def program(self, items):
-        type_decs, func_decs, main_block = items
-
+    def program(self, meta, children):
+        type_decs, func_decs, main_block = children
         return Program(
             scope=None,
+            meta_info=MetaInfo.from_meta(meta),
             type_decs=type_decs,
             func_decs=func_decs,
             main_block=main_block,
@@ -284,8 +320,8 @@ class ASTConstructor(Transformer):
     type_decs = return_children
     func_decs = return_children
 
-    def main_block(self, items):
-        return items[1]  # index 0 is the "main" token
+    def main_block(self, _, children):
+        return children[1]  # index 0 is the "main" token
 
     stmts = return_children
 
@@ -293,37 +329,61 @@ class ASTConstructor(Transformer):
     # Declarations
     # =====================
 
-    def const_dec(self, items):
-        _, name, value = items
-        return ConstDec(scope=None, name=name, value=value)
-
-    def var_dec_no_assign(self, items):
-        _, name, declared_type = items
-        return VarDec(
-            scope=None, name=name, declared_type=declared_type, init_value=None
+    def const_dec(self, meta, children):
+        _, name, value = children
+        return ConstDec(
+            scope=None, meta_info=MetaInfo.from_meta(meta), name=name, value=value
         )
 
-    def var_dec_assign(self, items):
-        _, name, init_value = items
-        return VarDec(scope=None, name=name, declared_type=None, init_value=init_value)
+    def var_dec_no_assign(self, meta, children):
+        _, name, declared_type = children
+        return VarDec(
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta),
+            name=name,
+            declared_type=declared_type,
+            init_value=None,
+        )
 
-    def type_dec(self, items):
-        name = items[1]
-        field_list = items[2]
-        return TypeDec(name=name, field_list=field_list)
+    def var_dec_assign(self, meta, children):
+        _, name, init_value = children
+        return VarDec(
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta),
+            name=name,
+            declared_type=None,
+            init_value=init_value,
+        )
+
+    def type_dec(self, meta, children):
+        name = children[1]
+        field_list = children[2]
+        return TypeDec(
+            scope=None,
+            name=name,
+            meta_info=MetaInfo.from_meta(meta),
+            field_list=field_list,
+        )
 
     field_list = return_children
 
-    def field(self, items):
-        attr_name, attr_type = items
+    def field(self, _, children):
+        attr_name, attr_type = children
         return (attr_name, attr_type)
 
-    def func_dec(self, items):
-        return_type, name, args, body = items
+    def func_dec(self, meta, children):
+        return_type, name, args, body = children
         if args is None:
             args = []
+        if body is None:
+            body = []
         return FuncDec(
-            scope=None, name=name, args=args, return_type=return_type, body=body
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta),
+            name=name,
+            args=args,
+            return_type=return_type,
+            body=body,
         )
 
     stmts_with_return = return_children
@@ -335,42 +395,46 @@ class ASTConstructor(Transformer):
     def VOID(self, _):
         return None
 
-    def not_array_type(self, items):
-        type_name = items[0]
+    def not_array_type(self, _, children):
+        type_name = children[0]
         return NotArrayType(name=type_name)
 
-    def basic_type(self, items):
-        name = items[0].value
+    def basic_type(self, _, children):
+        name = children[0].value
         return name
 
-    def array_type(self, items):
-        base_type = items[0]
-        size = items[2]
+    def array_type(self, _, children):
+        base_type = children[0]
+        size = children[2]
         return ArrayType(name="arr", base_type=base_type, size=size)
 
     # =====================
     # Statements
     # =====================
 
-    def assignment(self, items):
-        lval, rval = items
-        return Assignment(scope=None, lval=lval, rval=rval)
+    def assignment(self, meta, children):
+        lval, rval = children
+        return Assignment(
+            scope=None, meta_info=MetaInfo.from_meta(meta), lval=lval, rval=rval
+        )
 
-    def conditional(self, items):
-        condition = items[1]
-        then_block = items[2]
-        else_block = items[4] if len(items) > 3 else None
+    def conditional(self, meta, children):
+        condition = children[1]
+        then_block = children[2]
+        else_block = children[4] if len(children) > 3 else None
         return Conditional(
             scope=None,
+            meta_info=MetaInfo.from_meta(meta),
             condition=condition,
             then_block=then_block,
             else_block=else_block,
         )
 
-    def for_loop(self, items):
-        _, iterator_name, init_val, cond, step, body = items
+    def for_loop(self, meta, children):
+        _, iterator_name, init_val, cond, step, body = children
         return ForLoop(
             scope=None,
+            meta_info=MetaInfo.from_meta(meta),
             iterator_name=iterator_name,
             init_val=init_val,
             cond=cond,
@@ -378,137 +442,157 @@ class ASTConstructor(Transformer):
             body=body,
         )
 
-    def while_loop(self, items):
-        _, cond, body = items
-        return WhileLoop(scope=None, cond=cond, body=body)
+    def while_loop(self, meta, children):
+        _, cond, body = children
+        return WhileLoop(
+            scope=None, meta_info=MetaInfo.from_meta(meta), cond=cond, body=body
+        )
 
-    def repeat_loop(self, items):
-        _, body, _, cond = items
-        return RepeatLoop(scope=None, cond=cond, body=body)
+    def repeat_loop(self, meta, children):
+        _, body, _, cond = children
+        return RepeatLoop(
+            scope=None, meta_info=MetaInfo.from_meta(meta), cond=cond, body=body
+        )
 
-    def return_stmt(self, items):
-        value = items[1] if len(items) > 1 else None
-        return ReturnStmt(scope=None, value=value)
+    def return_stmt(self, meta, children):
+        value = children[1] if len(children) > 1 else None
+        return ReturnStmt(scope=None, meta_info=MetaInfo.from_meta(meta), value=value)
 
-    def print_stmt(self, items):
-        value = items[1]
-        return PrintStmt(scope=None, value=value)
+    def print_stmt(self, meta, children):
+        value = children[1]
+        return PrintStmt(scope=None, meta_info=MetaInfo.from_meta(meta), value=value)
 
-    def scan_stmt(self, items):
-        lval = items[1]
-        return ScanStmt(scope=None, lval=lval)
+    def scan_stmt(self, meta, children):
+        lval = children[1]
+        return ScanStmt(scope=None, meta_info=MetaInfo.from_meta(meta), lval=lval)
 
     # =====================
     # Expressions: Scalars
     # =====================
 
-    def int_literal(self, items):
-        raw_value = items[0].value
+    def int_literal(self, meta, children):
+        token = children[0]
+        raw_value = token.value
         return Literal(
             scope=None,
-            type=NotArrayType("int"),
-            raw_value=raw_value,
+            meta_info=MetaInfo.from_meta(meta),
+            datatype=NotArrayType("int"),
             value=int(raw_value),
         )
 
-    def float_literal(self, items):
-        raw_value = items[0].value
+    def float_literal(self, meta, children):
+        token = children[0]
+        raw_value = token.value
         return Literal(
             scope=None,
-            type=NotArrayType("float"),
-            raw_value=raw_value,
+            meta_info=MetaInfo.from_meta(meta),
+            datatype=NotArrayType("float"),
             value=float(raw_value),
         )
 
-    def bool_literal(self, items):
-        raw_value = items[0].value
+    def bool_literal(self, meta, children):
+        token = children[0]
+        raw_value = token.value
         return Literal(
             scope=None,
-            type=NotArrayType("bool"),
-            raw_value=raw_value,
-            value=(raw_value == "true"),
+            meta_info=MetaInfo.from_meta(meta),
+            datatype=NotArrayType("bool"),
+            value=raw_value == "true",
         )
 
-    def str_literal(self, items):
-        raw_value = items[0].value
+    def str_literal(self, meta, children):
+        token = children[0]
+        raw_value = token.value
         return Literal(
             scope=None,
-            type=NotArrayType("string"),
-            raw_value=raw_value,
+            meta_info=MetaInfo.from_meta(meta),
+            datatype=NotArrayType("str"),
             value=raw_value[1:-1],
         )
 
-    def arr_access(self, items):
-        array_name, indices = items
-        return ArrAccess(scope=None, type=None, array_name=array_name, indices=indices)
+    def arr_access(self, meta, children):
+        array_name, indices = children
+        return ArrAccess(
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta),
+            array_name=array_name,
+            indices=indices,
+        )
 
-    def field_access(self, items):
-        recordname, attribute = items
+    def field_access(self, meta, children):
+        recordname, attribute = children
         return FieldAccess(
-            scope=None, type=None, record_name=recordname, attribute=attribute
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta),
+            record_name=recordname,
+            attribute=attribute,
         )
 
     exprs = return_children
 
-    def invocation(self, items):
-        name = items[0]
-        args = items[1] if items[1] is not None else []
-        return Invocation(scope=None, type=None, name=name, args=args)
+    def invocation(self, meta, children):
+        name = children[0]
+        args = children[1] if children[1] is not None else []
+        return Invocation(
+            scope=None, meta_info=MetaInfo.from_meta(meta), name=name, args=args
+        )
 
     # =====================
     # Expressions: Operations
     # =====================
 
-    def add(self, items):
-        return new_bin_op(items, "+")
+    def add(self, meta, children):
+        return new_bin_op(meta, children, "+")
 
-    def sub(self, items):
-        return new_bin_op(items, "-")
+    def sub(self, meta, children):
+        return new_bin_op(meta, children, "-")
 
-    def mul(self, items):
-        return new_bin_op(items, "*")
+    def mul(self, meta, children):
+        return new_bin_op(meta, children, "*")
 
-    def div(self, items):
-        return new_bin_op(items, "/")
+    def div(self, meta, children):
+        return new_bin_op(meta, children, "/")
 
-    def eq(self, items):
-        return new_bool_op(items, op="==")
+    def eq(self, meta, children):
+        return new_bool_op(meta, children, op="==")
 
-    def ne(self, items):
-        return new_bool_op(items, op="!=")
+    def ne(self, meta, children):
+        return new_bool_op(meta, children, op="!=")
 
-    def lt(self, items):
-        return new_bool_op(items, op="<")
+    def lt(self, meta, children):
+        return new_bool_op(meta, children, op="<")
 
-    def le(self, items):
-        return new_bool_op(items, op="<=")
+    def le(self, meta, children):
+        return new_bool_op(meta, children, op="<=")
 
-    def gt(self, items):
-        return new_bool_op(items, op=">")
+    def gt(self, meta, children):
+        return new_bool_op(meta, children, op=">")
 
-    def ge(self, items):
-        return new_bool_op(items, op=">=")
+    def ge(self, meta, children):
+        return new_bool_op(meta, children, op=">=")
 
-    def lor(self, items):
-        return new_bool_op(items, op="||")
+    def lor(self, meta, children):
+        return new_bool_op(meta, children, op="||")
 
-    def land(self, items):
-        return new_bool_op(items, op="&&")
+    def land(self, meta, children):
+        return new_bool_op(meta, children, op="&&")
 
-    def lnot(self, items):
-        return UnaryOp(scope=None, type=None, op="!", arg=items[0])
+    def lnot(self, meta, children):
+        return UnaryOp(
+            scope=None, meta_info=MetaInfo.from_meta(meta), op="!", arg=children[0]
+        )
 
 
 # testing
 if __name__ == "__main__":
-    parser = Lark.open("grammar.lark", start="program", parser="lalr")
+    parser = Lark.open(
+        "grammar.lark", start="program", parser="lalr", propagate_positions=True
+    )
     s = """
     main: {
-        var x: int;
+        var x: int arr[5];
     }
     """
     parse_tree = parser.parse(s)
-    print(parse_tree.pretty())
-
     ast = ASTConstructor().transform(parse_tree)
     print(ast)

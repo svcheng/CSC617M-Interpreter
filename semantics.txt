@@ -1,10 +1,10 @@
 Other syntax rules (besides grammar rules)
 - records should not be defined recursively (done)
-- functions
+- functions (all done)
     - functions should be passed the correct number of parameters (done)
     - return statements should only be in function bodies (done)
     - void functions should not return values and non-void functions should return values (done)
-- declarations
+- declarations (all done)
     - variables/arguments should only be assigned types that have been defined (done)
     - identifiers should not be reused (except var decs where the previous declarations were in lower-level scopes) (done)
     - identifiers should not be used before declared (done)
@@ -12,9 +12,11 @@ Other syntax rules (besides grammar rules)
 
 Semantics
 - constants cannot be re-assigned (done)
-- scoping rules when variables are referenced
+- constants cannot be records and arrays (these are mutable)
+- everything is pass by value except records and arrays
 - type checking
     - check that types are correct: operands, function parameters (including print and scan), assignment rvalues, for loop parameters, conditions, etc.
     - type casting in arithmetic ops between numbers (int to float)
     - type inference for constant/variable declaration (e.g. var x = 5+1; <- compiler should know x is integer)
     - array indices and sizes must be non-negative integers
+- scoping rules when variables are referenced
