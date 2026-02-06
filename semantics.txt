@@ -1,22 +1,30 @@
-Other syntax rules (besides grammar rules)
-- records should not be defined recursively (done)
-- functions (all done)
-    - functions should be passed the correct number of parameters (done)
-    - return statements should only be in function bodies (done)
-    - void functions should not return values and non-void functions should return values (done)
-- declarations (all done)
-    - variables/arguments should only be assigned types that have been defined (done)
-    - identifiers should not be reused (except var decs where the previous declarations were in lower-level scopes) (done)
-    - identifiers should not be used before declared (done)
-    - identifiers should not be keywords (done)
+Syntax rules (besides grammar rules) (all done)
+- records should not be defined recursively
+- functions
+    - functions should be passed the correct number of parameters
+    - return statements should only be in function bodies
+    - void functions should not return values and non-void functions should return values
+- declarations
+    - identifiers should not be keywords
+    - declared types of variables/arguments should be defined
+    - identifiers should not be reused (within a scope)
+    - identifiers should not be referenced before they are declared
 
-Semantics
+Compile-time Semantics
 - constants cannot be re-assigned (done)
-- constants cannot be records and arrays (these are mutable)
-- everything is pass by value except records and arrays
-- type checking
+- constants cannot be records and arrays (these are mutable) (done)
+- type checking (all done except return-type checking)
     - check that types are correct: operands, function parameters (including print and scan), assignment rvalues, for loop parameters, conditions, etc.
     - type casting in arithmetic ops between numbers (int to float)
     - type inference for constant/variable declaration (e.g. var x = 5+1; <- compiler should know x is integer)
-    - array indices and sizes must be non-negative integers
-- scoping rules when variables are referenced
+    - array indices and sizes must be integers
+- scoping rules (done)
+    - to determine type of variable when its name is bound to more than 1 variable, choose the one in the innermost scope
+    - conditional and loop blocks have an inner scope
+
+Run-time Semantics
+- to determine value of variable when its name is bound to more than 1 variable, choose the one in the innermost scope
+- everything is pass by value except records and arrays
+- array access bounds checking
+- default values (instead of NULL, like in C)
+- type casting in arithmetic ops

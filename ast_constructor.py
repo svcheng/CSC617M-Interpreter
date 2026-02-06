@@ -1,290 +1,54 @@
-from dataclasses import dataclass
-from typing import Any, Optional, Self
-
-from lark import Lark, Token, Transformer, v_args
-from lark.tree import Meta
-
-# =====================
-# Auxialliary info useful for syntax and semantic checking
-# =====================
-
-
-@dataclass
-class VarInfo:
-    is_constant: bool
-    datatype: Optional["Type"]  # datatype=None for variables declared with assignment
-    declared_in_cond_block: bool = False
-
-
-@dataclass
-class Scope:
-    parent_scope: Optional[Self]  # has type Scope or None
-    var_table: dict[str, VarInfo]
-
-    def var_name_in_scope(self, var_name: str) -> bool:
-        if var_name in self.var_table:
-            return True
-        elif self.parent_scope is not None and self.parent_scope.var_name_in_scope(
-            var_name
-        ):
-            return True
-
-        return False
-
-    def insert_varname(self, var_name: str, var_info: VarInfo) -> None:
-        self.var_table[var_name] = var_info
-
-    def get_var_info(self, var_name: str) -> Optional[VarInfo]:
-        if var_name in self.var_table:
-            return self.var_table[var_name]
-        elif self.parent_scope is not None:
-            return self.parent_scope.get_var_info(var_name)
-        else:
-            return None
-
-    def var_is_constant(self, var_name) -> bool:
-        var_info = self.get_var_info(var_name)
-        if var_info is None:
-            return False
-
-        return var_info.is_constant
-
-    def conditionally_defined(self, var_name: str) -> bool:
-        var_info = self.get_var_info(var_name)
-        if var_info is None:
-            return False
-
-        return var_info.declared_in_cond_block
-
-
-@dataclass
-class MetaInfo:
-    start_line: int
-    end_line: int
-    start_col: int
-    end_col: int
-    start_pos: int
-    end_pos: int
-
-    @staticmethod
-    def from_meta(meta: Meta):
-        return MetaInfo(
-            meta.line,
-            meta.end_line,
-            meta.column,
-            meta.end_column,
-            meta.start_pos,
-            meta.end_pos,
-        )
-
-    @staticmethod
-    def from_token(token: Token):
-        return MetaInfo(
-            token.line,
-            token.end_line,
-            token.column,
-            token.end_column,
-            token.start_pos,
-            token.end_pos,
-        )
-
-
-@dataclass
-class Node:
-    # will always be assigned None during ast construction, to be determined during syntax checking
-    scope: Optional[Scope]
-    meta_info: MetaInfo  # contains info about the rule matched like the line number, col number, etc.
-
-
-# =====================
-# Program Structure
-# =====================
-
-
-@dataclass
-class Identifier(Node):
-    name: str
-
-    def __str__(self):
-        return self.name
-
-
-@dataclass
-class Program(Node):
-    type_decs: list["TypeDec"]
-    func_decs: list["FuncDec"]
-    main_block: list
-
-
-# =====================
-# Declarations
-# =====================
-
-
-@dataclass
-class VarDec(Node):
-    name: Identifier
-    # quotations below so that IDE does not complain that Type is not defined
-    declared_type: Optional["Type"]
-    init_value: Optional["Expr"]
-
-
-@dataclass
-class ConstDec(Node):
-    name: Identifier
-    value: "Expr"
-
-
-@dataclass
-class TypeDec(Node):
-    name: Identifier
-    field_list: list[tuple[Identifier, "Type"]]
-
-
-@dataclass
-class FuncDec(Node):
-    name: Identifier
-    args: list[tuple[Identifier, "Type"]]
-    return_type: Optional["Type"]
-    body: list
-
-
-# =====================
-# Types
-# =====================
-
-
-@dataclass
-class Type:
-    name: str | Identifier
-
-
-@dataclass
-class NotArrayType(Type):
-    pass
-
-
-@dataclass
-class ArrayType(Type):
-    base_type: NotArrayType
-    size: list["Expr"]
-
-
-# =====================
-# Statements
-# =====================
-
-
-@dataclass
-class Assignment(Node):
-    lval: "Expr"
-    rval: "Expr"
-
-
-@dataclass
-class Conditional(Node):
-    condition: "Expr"
-    then_block: list
-    else_block: Optional[list]
-
-
-@dataclass
-class ForLoop(Node):
-    iterator_name: Identifier
-    init_val: "Expr"
-    cond: "Expr"
-    step: "Expr"
-    body: list
-
-
-@dataclass
-class WhileLoop(Node):
-    cond: "Expr"
-    body: list
-
-
-@dataclass
-class RepeatLoop(Node):
-    cond: "Expr"
-    body: list
-
-
-@dataclass
-class ReturnStmt(Node):
-    value: Optional["Expr"]
-
-
-@dataclass
-class PrintStmt(Node):
-    value: "Expr"
-
-
-@dataclass
-class ScanStmt(Node):
-    lval: "Expr"
-
-
-# =====================
-# Expressions
-# =====================
-
-
-@dataclass
-class Expr(Node):
-    pass
-
-
-@dataclass
-class Literal(Expr):
-    value: Any
-    datatype: Optional[Type]  # type of None means type is still unknown
-
-
-@dataclass
-class ArrAccess(Expr):
-    array_name: Identifier
-    indices: list["Expr"]
-
-
-@dataclass
-class FieldAccess(Expr):
-    record_name: Identifier
-    attribute: Identifier
-
-
-@dataclass
-class UnaryOp(Expr):
-    op: str
-    arg: Expr
-
-
-@dataclass
-class BinOp(Expr):
-    op: str
-    left: Expr
-    right: Expr
-
-
-@dataclass
-class Invocation(Expr):
-    name: Identifier
-    args: list[Expr]
-
-
-############################################################
-# AST Functions/Classes
-############################################################
-
-
-def new_bin_op(meta, children, op: str):
+from typing import Optional
+
+from lark import Lark, Transformer, v_args
+
+from ast_definition import (
+    BOOL,
+    CHAR,
+    FLOAT,
+    INT,
+    STR,
+    ArrAccess,
+    ArrayType,
+    Assignment,
+    BinOp,
+    Conditional,
+    ConstDec,
+    FieldAccess,
+    ForLoop,
+    FuncDec,
+    Identifier,
+    Invocation,
+    Literal,
+    MetaInfo,
+    NotArrayType,
+    PrintStmt,
+    Program,
+    RepeatLoop,
+    ReturnStmt,
+    ScanStmt,
+    Type,
+    TypeDec,
+    UnaryOp,
+    VarDec,
+    WhileLoop,
+)
+
+
+def new_bin_op(meta, children, datatype: Optional[Type], op: str):
     left, right = children
     return BinOp(
-        scope=None, meta_info=MetaInfo.from_meta(meta), op=op, left=left, right=right
+        scope=None,
+        meta_info=MetaInfo.from_meta(meta),
+        datatype=datatype,
+        op=op,
+        left=left,
+        right=right,
     )
 
 
 def new_bool_op(meta, children, op: str):
-    return new_bin_op(meta=meta, children=children, op=op)
+    return new_bin_op(meta=meta, children=children, datatype=NotArrayType(BOOL), op=op)
 
 
 @v_args(meta=True)
@@ -431,13 +195,13 @@ class ASTConstructor(Transformer):
         )
 
     def for_loop(self, meta, children):
-        _, iterator_name, init_val, cond, step, body = children
+        _, iterator_name, range_start, range_end, step, body = children
         return ForLoop(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
             iterator_name=iterator_name,
-            init_val=init_val,
-            cond=cond,
+            range_start=range_start,
+            range_end=range_end,
             step=step,
             body=body,
         )
@@ -476,7 +240,7 @@ class ASTConstructor(Transformer):
         return Literal(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
-            datatype=NotArrayType("int"),
+            datatype=NotArrayType(INT),
             value=int(raw_value),
         )
 
@@ -486,7 +250,7 @@ class ASTConstructor(Transformer):
         return Literal(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
-            datatype=NotArrayType("float"),
+            datatype=NotArrayType(FLOAT),
             value=float(raw_value),
         )
 
@@ -496,7 +260,7 @@ class ASTConstructor(Transformer):
         return Literal(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
-            datatype=NotArrayType("bool"),
+            datatype=NotArrayType(BOOL),
             value=raw_value == "true",
         )
 
@@ -506,7 +270,7 @@ class ASTConstructor(Transformer):
         return Literal(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
-            datatype=NotArrayType("str"),
+            datatype=NotArrayType(STR),
             value=raw_value[1:-1],
         )
 
@@ -515,6 +279,7 @@ class ASTConstructor(Transformer):
         return ArrAccess(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
+            datatype=None,
             array_name=array_name,
             indices=indices,
         )
@@ -524,6 +289,7 @@ class ASTConstructor(Transformer):
         return FieldAccess(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
+            datatype=None,
             record_name=recordname,
             attribute=attribute,
         )
@@ -534,7 +300,11 @@ class ASTConstructor(Transformer):
         name = children[0]
         args = children[1] if children[1] is not None else []
         return Invocation(
-            scope=None, meta_info=MetaInfo.from_meta(meta), name=name, args=args
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta),
+            datatype=None,
+            name=name,
+            args=args,
         )
 
     # =====================
@@ -542,16 +312,16 @@ class ASTConstructor(Transformer):
     # =====================
 
     def add(self, meta, children):
-        return new_bin_op(meta, children, "+")
+        return new_bin_op(meta=meta, children=children, datatype=None, op="+")
 
     def sub(self, meta, children):
-        return new_bin_op(meta, children, "-")
+        return new_bin_op(meta=meta, children=children, datatype=None, op="-")
 
     def mul(self, meta, children):
-        return new_bin_op(meta, children, "*")
+        return new_bin_op(meta=meta, children=children, datatype=None, op="*")
 
     def div(self, meta, children):
-        return new_bin_op(meta, children, "/")
+        return new_bin_op(meta=meta, children=children, datatype=None, op="/")
 
     def eq(self, meta, children):
         return new_bool_op(meta, children, op="==")
@@ -579,18 +349,22 @@ class ASTConstructor(Transformer):
 
     def lnot(self, meta, children):
         return UnaryOp(
-            scope=None, meta_info=MetaInfo.from_meta(meta), op="!", arg=children[0]
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta),
+            datatype=None,
+            op="!",
+            arg=children[0],
         )
 
 
-# testing
+# for testing
 if __name__ == "__main__":
     parser = Lark.open(
         "grammar.lark", start="program", parser="lalr", propagate_positions=True
     )
     s = """
     main: {
-        var x: int arr[5];
+        scan(x);
     }
     """
     parse_tree = parser.parse(s)
