@@ -104,6 +104,17 @@ class MetaInfo:
 class Type:
     name: "str | Identifier"
 
+    # note that array types may not be equal even when this passes due to dimensions being unkown until runtime
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Type):
+            raise TypeError("Equality comparison between Type obj and non-Type obj")
+        return str(self.name) == str(other.name)
+
+    def __ne__(self, other: object) -> bool:
+        if not isinstance(other, Type):
+            raise TypeError("Equality comparison between Type obj and non-Type obj")
+        return str(self.name) != str(other.name)
+
 
 @dataclass
 class NotArrayType(Type):
@@ -114,6 +125,11 @@ class NotArrayType(Type):
 class ArrayType(Type):
     base_type: NotArrayType
     size: list["Expr"]
+
+    def __init__(self, base_type: NotArrayType, size: list["Expr"]):
+        self.name = "arr"
+        self.base_type = base_type
+        self.size = size
 
 
 # =====================

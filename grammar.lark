@@ -14,8 +14,7 @@
 IDENTIFIER.-1: CNAME // lower priority
 
 BOOLVAL: "true" | "false"
-CHARVAL: "'" /[A-Za-z!@#Vjdd$%^&*()_+=\-{}\[\]:;"'<>,.?]/ "'"
-// CHARVAL: "'" /[A-Za-z!@#$%^&*()_+=\-{}\[\]:;"'<>,.?\/|\]/ "'"
+CHARVAL: "'" /[ -~\n]/ "'" // any printable ASCII char + newline
 
 // Keywords
 LET: "let"
@@ -128,6 +127,7 @@ scan_stmt: SCAN "(" lvalue ")" ";"
 ?literal: INT   -> int_literal
         | FLOAT  -> float_literal
         | BOOLVAL -> bool_literal
+        | CHARVAL -> char_literal
         | STRVAL -> str_literal
 
 arr_access: IDENTIFIER "[" exprs "]"

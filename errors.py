@@ -223,6 +223,27 @@ class InvalidIndexTypeError(CustomError):
         )
 
 
+class IncorrectIndexDimensionError(CustomError):
+    error_name = "INCORRECT-INDEX-DIMENSION ERROR"
+
+    def __init__(
+        self,
+        program_str: str,
+        meta_info: MetaInfo,
+        arr_name: str,
+        expected_dim: int,
+        num_indices: int,
+    ):
+        msg_prefix = self.error_name + " found in "
+        error_msg = f'Array "{arr_name}" has dimension {expected_dim} but {num_indices} {"index" if num_indices == 1 else "indices"} given'
+        super().__init__(
+            msg_prefix=msg_prefix,
+            error_msg=error_msg,
+            program_str=program_str,
+            meta_info=meta_info,
+        )
+
+
 class MisplacedReturnError(CustomError):
     error_name = "MISPLACED-RETURN ERROR"
     error_msg = "Return statement outside of function declaration"
@@ -408,7 +429,7 @@ class MalformedForLoopError(CustomError):
 
 class ImmutableScanTarget(CustomError):
     error_name = "INVALID-SCAN-TARGET ERROR"
-    error_msg = "Input to Scan must not be a constant"
+    error_msg = 'Input to "scan" must not be a constant'
 
     def __init__(self, program_str: str, meta_info: MetaInfo):
         msg_prefix = self.error_name + " found in "
@@ -416,6 +437,27 @@ class ImmutableScanTarget(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=self.error_msg,
+            program_str=program_str,
+            meta_info=meta_info,
+        )
+
+
+class InvalidReturnValueError(CustomError):
+    error_name = "INVALID-RETURN-VALUE ERROR"
+
+    def __init__(
+        self,
+        program_str: str,
+        meta_info: MetaInfo,
+        func_name: str,
+        expected_type: str,
+        actual_type: str,
+    ):
+        msg_prefix = self.error_name + f' found in definition of "{func_name}", '
+        error_msg = f'Returning value of type "{actual_type}" but function has return type "{expected_type}"'
+        super().__init__(
+            msg_prefix=msg_prefix,
+            error_msg=error_msg,
             program_str=program_str,
             meta_info=meta_info,
         )

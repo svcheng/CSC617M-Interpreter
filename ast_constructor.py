@@ -170,7 +170,7 @@ class ASTConstructor(Transformer):
     def array_type(self, _, children):
         base_type = children[0]
         size = children[2]
-        return ArrayType(name="arr", base_type=base_type, size=size)
+        return ArrayType(base_type=base_type, size=size)
 
     # =====================
     # Statements
@@ -262,6 +262,16 @@ class ASTConstructor(Transformer):
             meta_info=MetaInfo.from_meta(meta),
             datatype=NotArrayType(BOOL),
             value=raw_value == "true",
+        )
+
+    def char_literal(self, meta, children):
+        token = children[0]
+        raw_value = token.value
+        return Literal(
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta),
+            datatype=NotArrayType(CHAR),
+            value=raw_value[1:-1],
         )
 
     def str_literal(self, meta, children):
@@ -362,11 +372,12 @@ if __name__ == "__main__":
     parser = Lark.open(
         "grammar.lark", start="program", parser="lalr", propagate_positions=True
     )
-    s = """
+    s = r"""
     main: {
-        scan(x);
+        let x = '\';
     }
     """
+
     parse_tree = parser.parse(s)
     ast = ASTConstructor().transform(parse_tree)
     print(ast)

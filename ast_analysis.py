@@ -40,6 +40,7 @@ from errors import (
     ConstantReassignmentError,
     CustomError,
     ImmutableScanTarget,
+    IncorrectIndexDimensionError,
     IncorrectParameterCountError,
     IncorrectParameterTypeError,
     InvalidAttributeNameError,
@@ -47,6 +48,7 @@ from errors import (
     InvalidConditionError,
     InvalidIdentifierTypeError,
     InvalidIndexTypeError,
+    InvalidReturnValueError,
     KeywordCollisionError,
     MalformedForLoopError,
     MisplacedReturnError,
@@ -112,8 +114,8 @@ class ProgramAnalyzer:
     # Analysis passes
     ####################
 
-    # constructs symbol tables for custom types and functions while doing syntax checking for them
-    def build_type_and_function_tables(self):
+    # constructs symbol table for custom types while doing syntax checking on the declarations
+    def build_type_table(self):
         for type_dec in self.ast.type_decs:
             type_name = str(type_dec.name)
             dec_meta = type_dec.meta_info
@@ -146,23 +148,24 @@ class ProgramAnalyzer:
                     raise RecursiveTypeDefinitionError(self.program_str, dec_meta)
 
                 # types that don't exist
-                if not isinstance(field_type, ArrayType):
-                    if field_type_name not in self.type_table:
-                        raise NonExistentNameError(
-                            self.program_str,
-                            dec_meta,
-                            identifier=field_type_name,
-                            expected_construct="type",
-                        )
-                else:
+                if isinstance(field_type, ArrayType):
                     base_type_name = str(field_type.base_type.name)
                     if base_type_name not in self.type_table:
                         raise InvalidBaseTypeError(
                             self.program_str, dec_meta, base_type_name=base_type_name
                         )
+                elif field_type_name not in self.type_table:
+                    raise NonExistentNameError(
+                        self.program_str,
+                        dec_meta,
+                        identifier=field_type_name,
+                        expected_construct="type",
+                    )
 
             self.type_table[type_name] = type_dec
 
+    # constructs symbol table for functions while doing syntax checking on the declarations
+    def build_function_table(self):
         for func_dec in self.ast.func_decs:
             func_name = str(func_dec.name)
             dec_meta = func_dec.meta_info
@@ -192,87 +195,42 @@ class ProgramAnalyzer:
                     )
 
                 # arg_type must be a valid type
-                if not isinstance(arg_type, ArrayType):
-                    if arg_type_name not in self.type_table:
-                        raise NonExistentNameError(
-                            self.program_str,
-                            dec_meta,
-                            identifier=arg_type_name,
-                            expected_construct="type",
-                        )
-                else:
+                if isinstance(arg_type, ArrayType):
                     base_type_name = str(arg_type.base_type.name)
                     if base_type_name not in self.type_table:
                         raise InvalidBaseTypeError(
                             self.program_str, dec_meta, base_type_name
                         )
+                elif arg_type_name not in self.type_table:
+                    raise NonExistentNameError(
+                        self.program_str,
+                        dec_meta,
+                        identifier=arg_type_name,
+                        expected_construct="type",
+                    )
 
             self.func_table[func_name] = func_dec
 
     # checks for return statements not in function declarations
-    def check_misplaced_returns(self, node: Node):
-        match node:
-            case Program():
-                for stmt in node.main_block:
-                    self.check_misplaced_returns(stmt)
-            case ReturnStmt():
-                raise MisplacedReturnError(self.program_str, node.meta_info)
-            case Conditional():
-                for stmt in node.then_block:
-                    self.check_misplaced_returns(stmt)
-                if node.else_block is not None:
-                    for stmt in node.else_block:
-                        self.check_misplaced_returns(stmt)
-            case ForLoop():
-                for stmt in node.body:
-                    self.check_misplaced_returns(stmt)
-            case WhileLoop() | RepeatLoop():
-                for stmt in node.body:
-                    self.check_misplaced_returns(stmt)
-            case _:
-                pass
-
-    # checks that return statements do not return values if in a void function, and do return values if not in a void func
-    def check_return_stmts(self):
-        for func_dec in self.ast.func_decs:
-
-            def visit(node: Node):
-                match node:
-                    case ReturnStmt():
-                        func_name = str(func_dec.name)
-                        value = node.value
-                        if func_dec.return_type is None and value is not None:
-                            raise ReturnValueExistenceError(
-                                self.program_str,
-                                node.meta_info,
-                                func_name=func_name,
-                                is_void=True,
-                            )
-                        elif func_dec.return_type is not None and value is None:
-                            raise ReturnValueExistenceError(
-                                self.program_str,
-                                node.meta_info,
-                                func_name=func_name,
-                                is_void=False,
-                                show_code_block=False,
-                            )
-                    case Conditional():
-                        for stmt in node.then_block:
+    def check_misplaced_returns(self):
+        def visit(node: Node):
+            match node:
+                case ReturnStmt():
+                    raise MisplacedReturnError(self.program_str, node.meta_info)
+                case Conditional():
+                    for stmt in node.then_block:
+                        visit(stmt)
+                    if node.else_block is not None:
+                        for stmt in node.else_block:
                             visit(stmt)
-                        if node.else_block is not None:
-                            for stmt in node.else_block:
-                                visit(stmt)
-                    case ForLoop():
-                        for stmt in node.body:
-                            visit(stmt)
-                    case WhileLoop() | RepeatLoop():
-                        for stmt in node.body:
-                            visit(stmt)
-                    case _:
-                        pass
+                case ForLoop() | WhileLoop() | RepeatLoop():
+                    for stmt in node.body:
+                        visit(stmt)
+                case _:
+                    pass
 
-            for stmt in func_dec.body:
-                visit(stmt)
+        for stmt in self.ast.main_block:
+            visit(stmt)
 
     # builds symbol tables while checking for improper use of identifiers
     def build_var_tables(self, node, cur_scope: Scope):
@@ -448,7 +406,7 @@ class ProgramAnalyzer:
                 node.scope = cur_scope
                 record_name, attribute = str(record_name), str(attribute)
 
-                # check the record name should be in scope
+                # record name should be in scope
                 if not cur_scope.var_name_in_scope(record_name):
                     raise NonExistentNameError(
                         self.program_str,
@@ -518,22 +476,23 @@ class ProgramAnalyzer:
             case _:
                 pass
 
-    def check_types_in_main(self, node: Node) -> Type | None:
+    # performs type checking on all statements and expressions except for validating return types
+    def check_types(self, node: Node) -> Type | None:
         match node:
             case Program():
                 for func_dec in node.func_decs:
-                    self.check_types_in_main(func_dec)
+                    self.check_types(func_dec)
                 for stmt in node.main_block:
-                    self.check_types_in_main(stmt)
+                    self.check_types(stmt)
             case FuncDec():
                 for stmt in node.body:
-                    self.check_types_in_main(stmt)
+                    self.check_types(stmt)
             ###############
             # Statements
             ###############
             case ConstDec(scope, meta, name, value):
                 assert scope is not None
-                value_type = self.check_types_in_main(value)
+                value_type = self.check_types(value)
                 if value_type is None:
                     raise VoidExpressionError(self.program_str, meta)
                 scope.set_type(str(name), datatype=value_type)
@@ -541,7 +500,7 @@ class ProgramAnalyzer:
                 assert scope is not None
                 if declared_type is None:
                     assert init_value is not None
-                    value_type = self.check_types_in_main(init_value)
+                    value_type = self.check_types(init_value)
                     if value_type is None:
                         raise VoidExpressionError(self.program_str, meta)
                     scope.set_type(str(name), datatype=value_type)
@@ -549,104 +508,99 @@ class ProgramAnalyzer:
                     assert declared_type is not None
                     scope.set_type(str(name), datatype=declared_type)
             case Assignment(_, meta, lval, rval):
-                left_type = self.check_types_in_main(lval)
+                left_type = self.check_types(lval)
                 assert left_type is not None
 
-                right_type = self.check_types_in_main(rval)
+                right_type = self.check_types(rval)
                 if right_type is None:
                     raise VoidExpressionError(self.program_str, meta)
-                left_type_name, right_type_name = (
-                    str(left_type.name),
-                    str(right_type.name),
-                )
 
-                if left_type_name != right_type_name:
+                # left and right types should match
+                if left_type != right_type:
                     raise TypeMismatchError(
-                        self.program_str, meta, left_type_name, right_type_name
+                        self.program_str,
+                        meta,
+                        str(left_type.name),
+                        str(right_type.name),
                     )
             case Conditional(scope, meta, cond, then_block, else_block):
                 assert scope is not None
 
                 # condition must be boolean
-                cond_type = self.check_types_in_main(cond)
+                cond_type = self.check_types(cond)
                 if cond_type is None:
                     raise VoidExpressionError(self.program_str, meta)
-                cond_type_name = str(cond_type.name)
-                if cond_type_name != BOOL:
+                if cond_type != NotArrayType(BOOL):
                     raise InvalidConditionError(
-                        self.program_str, meta, cond_type=cond_type_name
+                        self.program_str, meta, cond_type=str(cond_type.name)
                     )
 
                 for stmt in then_block:
-                    self.check_types_in_main(stmt)
+                    self.check_types(stmt)
                 if else_block is not None:
                     for stmt in else_block:
-                        self.check_types_in_main(stmt)
+                        self.check_types(stmt)
             case ForLoop(scope, meta, _, range_start, range_end, step, body):
                 assert scope is not None
 
-                # other params should be integers
+                # params should be integers
                 for param_name, param in [
                     ("Range start", range_start),
                     ("Range end", range_end),
                     ("Step", step),
                 ]:
-                    param_type = self.check_types_in_main(param)
+                    param_type = self.check_types(param)
                     if param_type is None:
                         raise VoidExpressionError(self.program_str, meta)
-                    param_type_name = str(param_type.name)
-                    if param_type_name != INT:
+                    if param_type != NotArrayType(INT):
                         raise MalformedForLoopError(
                             self.program_str,
                             meta,
                             param_name=param_name,
-                            param_type=param_type_name,
+                            param_type=str(param_type.name),
                         )
 
                 for stmt in body:
-                    self.check_types_in_main(stmt)
+                    self.check_types(stmt)
             case WhileLoop(scope, meta, cond, body) | RepeatLoop(
                 scope, meta, cond, body
             ):
                 assert scope is not None
 
                 # condition must be boolean
-                cond_type = self.check_types_in_main(cond)
+                cond_type = self.check_types(cond)
                 if cond_type is None:
                     raise VoidExpressionError(self.program_str, meta)
-                cond_type_name = str(cond_type.name)
-                if cond_type_name != BOOL:
+                if cond_type != NotArrayType(BOOL):
                     raise InvalidConditionError(
-                        self.program_str, meta, cond_type=cond_type_name
+                        self.program_str, meta, cond_type=str(cond_type.name)
                     )
 
                 for stmt in body:
-                    self.check_types_in_main(stmt)
+                    self.check_types(stmt)
             case PrintStmt(scope, meta, value):
                 assert scope is not None
-                value_type = self.check_types_in_main(value)
+                value_type = self.check_types(value)
                 if value_type is None:
                     raise VoidExpressionError(self.program_str, meta)
             case ScanStmt(scope, meta, lval):
                 assert scope is not None
-                lval_type = self.check_types_in_main(lval)
-                if lval_type is None:
-                    raise VoidExpressionError(self.program_str, meta)
+                lval_type = self.check_types(lval)
+                assert lval_type is not None
 
                 # lval should not be constant
                 if isinstance(lval, Identifier) and scope.var_is_constant(lval.name):
                     raise ImmutableScanTarget(self.program_str, meta)
 
                 # lval should be string
-                lval_type_name = str(lval_type.name)
-                if lval_type_name != STR:
+                if lval_type != NotArrayType(STR):
                     raise IncorrectParameterTypeError(
                         self.program_str,
                         meta,
-                        func_name="Scan",
+                        func_name="scan",
                         arg_name=None,
                         arg_type=STR,
-                        param_type=lval_type_name,
+                        param_type=str(lval_type.name),
                     )
             ###############
             # Expressions
@@ -658,34 +612,48 @@ class ProgramAnalyzer:
                 return node.datatype
             case ArrAccess(scope, meta, _, array_name, indices):
                 assert scope is not None
+                arr_name = str(array_name)
 
                 # get base type of array (and check that it is actually an array)
-                var_type = scope.get_type(str(array_name))
+                var_type = scope.get_type(arr_name)
                 assert var_type is not None
-                type_name = str(var_type.name)
-                if type_name != "arr":
+                if not isinstance(var_type, ArrayType):
                     raise InvalidIdentifierTypeError(
-                        self.program_str, meta, str(array_name), type_name, "arr"
+                        self.program_str,
+                        meta,
+                        var_name=arr_name,
+                        var_type=str(var_type.name),
+                        expected_type="arr",
                     )
-                assert isinstance(var_type, ArrayType)
                 base_type = var_type.base_type
+
+                # check that number of indices matches array dimension
+                num_indices = len(indices)
+                arr_dim = len(var_type.size)
+                if num_indices != arr_dim:
+                    raise IncorrectIndexDimensionError(
+                        self.program_str,
+                        meta,
+                        arr_name=arr_name,
+                        expected_dim=arr_dim,
+                        num_indices=num_indices,
+                    )
 
                 # check that indices are ints
                 for i, idx in enumerate(indices):
-                    idx_type = self.check_types_in_main(idx)
+                    idx_type = self.check_types(idx)
                     if idx_type is None:
                         raise VoidExpressionError(self.program_str, meta)
-                    type_name = str(idx_type.name)
-                    if type_name != INT:
+                    if idx_type != NotArrayType(INT):
                         raise InvalidIndexTypeError(
-                            self.program_str, meta, i + 1, wrong_type=type_name
+                            self.program_str, meta, i + 1, wrong_type=str(idx_type.name)
                         )
 
                 node.datatype = base_type
                 return base_type
             case FieldAccess(scope, _, _, record_name, attribute):
                 assert scope is not None
-                # return the type of the attr
+
                 # get the type of the variable
                 var_type = scope.get_type(str(record_name))
                 assert var_type is not None
@@ -693,32 +661,32 @@ class ProgramAnalyzer:
                 type_dec = self.type_table[type_name]
                 assert type_dec is not None
 
-                # get the type of the attribute being referenced
+                # return the type of the attribute being referenced
                 for field_name, field_type in type_dec.field_list:
                     if str(field_name) == str(attribute):
                         node.datatype = field_type
                         return field_type
             case UnaryOp(_, meta, _, op, arg):
-                arg_type = self.check_types_in_main(arg)
+                arg_type = self.check_types(arg)
                 if arg_type is None:
                     raise VoidExpressionError(self.program_str, meta)
-                type_name = str(arg_type.name)
 
                 # for now, the only unary op is logical negation
-                if type_name != BOOL:
+                if arg_type != NotArrayType(BOOL):
                     raise OperatorTypeError(
-                        self.program_str, meta, op=op, type_names=[type_name]
+                        self.program_str, meta, op=op, type_names=[str(arg_type.name)]
                     )
 
-                node.datatype = NotArrayType(BOOL)
+                node.datatype = arg_type
                 return arg_type
             case BinOp(scope, meta, _, op, left, right):
-                numerical_types = {INT, FLOAT}
+                BOOL_TYPE = NotArrayType(BOOL)
+                INT_TYPE = NotArrayType(INT)
+                FLOAT_TYPE = NotArrayType(FLOAT)
+                numerical_types = (INT_TYPE, FLOAT_TYPE)
 
-                left_type, right_type = (
-                    self.check_types_in_main(left),
-                    self.check_types_in_main(right),
-                )
+                left_type = self.check_types(left)
+                right_type = self.check_types(right)
                 if left_type is None or right_type is None:
                     raise VoidExpressionError(self.program_str, meta)
                 left_type_name, right_type_name = (
@@ -730,8 +698,8 @@ class ProgramAnalyzer:
                     case "+" | "-" | "*" | "/":
                         # inputs must be numerical
                         if (
-                            left_type_name not in numerical_types
-                            or right_type_name not in numerical_types
+                            left_type not in numerical_types
+                            or right_type not in numerical_types
                         ):
                             raise OperatorTypeError(
                                 self.program_str,
@@ -741,17 +709,17 @@ class ProgramAnalyzer:
                             )
 
                         # type cast to float if at least 1 arg is float
-                        if FLOAT in {left_type_name, right_type_name}:
-                            op_type = NotArrayType(FLOAT)
+                        if FLOAT_TYPE in (left_type, right_type):
+                            op_type = FLOAT_TYPE
                         else:
-                            op_type = NotArrayType(INT)
+                            op_type = INT_TYPE
 
                         node.datatype = op_type
                     case "==" | "!=" | "<" | "<=" | ">" | ">=":
                         # inputs must be numerical
                         if (
-                            left_type_name not in numerical_types
-                            or right_type_name not in numerical_types
+                            left_type not in numerical_types
+                            or right_type not in numerical_types
                         ):
                             raise OperatorTypeError(
                                 self.program_str,
@@ -759,10 +727,10 @@ class ProgramAnalyzer:
                                 op=op,
                                 type_names=[left_type_name, right_type_name],
                             )
-                        node.datatype = NotArrayType(BOOL)
+                        node.datatype = BOOL_TYPE
                     case "||" | "&&":
                         # inputs must be bools
-                        if left_type_name != BOOL or right_type_name != BOOL:
+                        if left_type != BOOL_TYPE or right_type != BOOL_TYPE:
                             raise OperatorTypeError(
                                 self.program_str,
                                 meta,
@@ -770,7 +738,7 @@ class ProgramAnalyzer:
                                 type_names=[left_type_name, right_type_name],
                             )
 
-                        node.datatype = NotArrayType(BOOL)
+                        node.datatype = BOOL_TYPE
                 return node.datatype
             case Invocation(scope, meta, _, name, params):
                 assert scope is not None
@@ -778,43 +746,117 @@ class ProgramAnalyzer:
 
                 # check param types
                 for i, (arg_name, arg_type) in enumerate(func_dec.args):
-                    arg_type_name = str(arg_type.name)
-                    param_type = self.check_types_in_main(params[i])
+                    param_type = self.check_types(params[i])
 
                     # param is invocation of void function
                     if param_type is None:
                         raise VoidExpressionError(self.program_str, meta)
 
                     # param otherwise has wrong type
-                    param_type_name = str(param_type.name)
-                    if param_type_name != arg_type_name:
+                    if param_type != arg_type:
                         raise IncorrectParameterTypeError(
                             self.program_str,
                             meta,
                             func_name=str(name),
                             arg_name=str(arg_name),
-                            arg_type=arg_type_name,
-                            param_type=param_type_name,
+                            arg_type=str(arg_type.name),
+                            param_type=str(param_type.name),
                         )
 
-                node.datatype = func_dec.return_type
+                node.datatype = func_dec.return_type  # may be None if func is void
                 return func_dec.return_type
             case _:
                 pass
 
-    def check_return_types(self):
-        pass
+    # checks that return types are correct
+    def check_return_stmts(self):
+        for func_dec in self.ast.func_decs:
+            func_name = str(func_dec.name)
+            expected_return_type = func_dec.return_type
+
+            def visit(node: Node):
+                match node:
+                    case ReturnStmt(_, meta, value):
+                        # void functions cannot return a value, non-void funcs must return one
+                        match (expected_return_type, value):
+                            case (None, t) if t is not None:
+                                raise ReturnValueExistenceError(
+                                    self.program_str,
+                                    meta,
+                                    func_name=func_name,
+                                    is_void=True,
+                                )
+                            case (t, None) if t is not None:
+                                raise ReturnValueExistenceError(
+                                    self.program_str,
+                                    meta,
+                                    func_name=func_name,
+                                    is_void=False,
+                                    show_code_block=False,
+                                )
+                            case (None, None):
+                                return
+                        assert expected_return_type is not None and value is not None
+
+                        #  check that return types are equal, at this point func is not void and return value exists
+                        actual_return_type = self.check_types(value)
+                        match (expected_return_type, actual_return_type):
+                            # void func was invoked on the right
+                            case (_, None):
+                                raise VoidExpressionError(self.program_str, meta)
+                            # type names are ot equal
+                            case (t1, t2) if t1 != t2:
+                                assert t1 is not None and t2 is not None
+                                raise InvalidReturnValueError(
+                                    self.program_str,
+                                    meta,
+                                    func_name=func_name,
+                                    expected_type=str(t1.name),
+                                    actual_type=str(t2.name),
+                                )
+                            # type names are equal but both arrays
+                            case (ArrayType() as t1, ArrayType() as t2):
+                                t1_base = t1.base_type
+                                t2_base = t2.base_type
+                                dim1, dim2 = len(t1.size), len(t2.size)
+                                formatted_t1 = f"{dim1}-D {t1_base.name} arr"
+                                formatted_t2 = f"{dim2}-D {t2_base.name} arr"
+
+                                # check that base types are same and that number of indices matches array dimension
+                                if t1_base != t2_base or dim1 != dim2:
+                                    raise InvalidReturnValueError(
+                                        self.program_str,
+                                        meta,
+                                        func_name=func_name,
+                                        expected_type=formatted_t1,
+                                        actual_type=formatted_t2,
+                                    )
+                    case Conditional():
+                        for stmt in node.then_block:
+                            visit(stmt)
+                        if node.else_block is not None:
+                            for stmt in node.else_block:
+                                visit(stmt)
+                    case ForLoop() | WhileLoop() | RepeatLoop():
+                        for stmt in node.body:
+                            visit(stmt)
+                    case _:
+                        pass
+
+            for stmt in func_dec.body:
+                visit(stmt)
 
     # enforces syntax and some semantics
     def analyze(self):
         try:
-            self.build_type_and_function_tables()
-            self.check_return_stmts()
-            self.check_misplaced_returns(self.ast)
+            self.build_type_table()
+            self.build_function_table()
+            self.check_misplaced_returns()
             self.build_var_tables(self.ast, Scope(None, dict()))
-            self.check_types_in_main(self.ast)
-            self.check_return_types()
+            self.check_types(self.ast)
+            self.check_return_stmts()
         except CustomError as e:
+            print("Compilation failed with the following error:")
             print(e)
         except Exception as e:  # if this case is reached there is a bug
             raise e
@@ -828,21 +870,11 @@ class ProgramAnalyzer:
 if __name__ == "__main__":
     s = """
     record pair {x: float, y: float}
-    int func(x: float, b: bool, s: str) {
-        var p: pair;
-        let y = true;
-        var a: int arr[5];
-        var xo = 5;
-        for (i;2;10;2) {
-            i = 5;
-        }
-        var os = "addfsp";
-        print(9);
-        scan(s);
+    int arr[5] func(x: float, b: bool) {
+        var a: int arr[7];
+        return a;
     }
-    void f(){}
     main: {
-
     }
     """
     parser = Lark.open(
@@ -854,5 +886,5 @@ if __name__ == "__main__":
     program_analyzer = ProgramAnalyzer(s, ast)
     program_analyzer.analyze()
 
-    for k, v in ast.scope.var_table.items():
-        print(k, ": ", v)
+    # for k, v in ast.scope.var_table.items():
+    #     print(k, ": ", v)
