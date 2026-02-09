@@ -1,0 +1,14 @@
+main: {
+    var flag = true;
+    var ch = 'A';
+    var msg = "Hello";
+
+    repeat {
+        scan(flag);
+        print(msg);
+    } until (!flag);
+
+    if (flag || false) {
+        print(ch);
+    }
+}

@@ -1,0 +1,14 @@
+record Person {
+    age: int,
+    score: float
+}
+
+main: {
+    var p: Person;
+
+    p.age = 21;
+    p.score = 99.5;
+
+    print(p.age);
+    print(p.score);
+}

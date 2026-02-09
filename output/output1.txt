@@ -1,0 +1,51 @@
+Keyword Token "main" found in line 1 column 1
+COLON Token ":" found in line 1 column 5
+LBRACE Token "{" found in line 1 column 7
+Keyword Token "let" found in line 2 column 5
+CNAME Token "a" found in line 2 column 9
+EQUAL Token "=" found in line 2 column 11
+Integer constant Token "10" found in line 2 column 13
+SEMICOLON Token ";" found in line 2 column 15
+Keyword Token "var" found in line 3 column 5
+CNAME Token "b" found in line 3 column 9
+EQUAL Token "=" found in line 3 column 11
+Integer constant Token "5" found in line 3 column 13
+SEMICOLON Token ";" found in line 3 column 14
+Keyword Token "var" found in line 4 column 5
+CNAME Token "c" found in line 4 column 9
+EQUAL Token "=" found in line 4 column 11
+CNAME Token "a" found in line 4 column 13
+PLUS Token "+" found in line 4 column 15
+CNAME Token "b" found in line 4 column 17
+STAR Token "*" found in line 4 column 19
+Integer constant Token "2" found in line 4 column 21
+SEMICOLON Token ";" found in line 4 column 22
+Keyword Token "print" found in line 6 column 5
+LPAR Token "(" found in line 6 column 10
+CNAME Token "c" found in line 6 column 11
+RPAR Token ")" found in line 6 column 12
+SEMICOLON Token ";" found in line 6 column 13
+Keyword Token "if" found in line 8 column 5
+LPAR Token "(" found in line 8 column 8
+CNAME Token "c" found in line 8 column 9
+MORETHAN Token ">" found in line 8 column 11
+Integer constant Token "10" found in line 8 column 13
+RPAR Token ")" found in line 8 column 15
+LBRACE Token "{" found in line 8 column 17
+Keyword Token "print" found in line 9 column 9
+LPAR Token "(" found in line 9 column 14
+CNAME Token "c" found in line 9 column 15
+RPAR Token ")" found in line 9 column 16
+SEMICOLON Token ";" found in line 9 column 17
+RBRACE Token "}" found in line 10 column 5
+Keyword Token "else" found in line 10 column 7
+LBRACE Token "{" found in line 10 column 12
+Keyword Token "print" found in line 11 column 9
+LPAR Token "(" found in line 11 column 14
+CNAME Token "a" found in line 11 column 15
+RPAR Token ")" found in line 11 column 16
+SEMICOLON Token ";" found in line 11 column 17
+RBRACE Token "}" found in line 12 column 5
+RBRACE Token "}" found in line 13 column 1
+
+Scanner time: 0.001721 seconds
