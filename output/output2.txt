@@ -1,0 +1,48 @@
+Keyword Token "record" found in line 1 column 1
+CNAME Token "Person" found in line 1 column 8
+LBRACE Token "{" found in line 1 column 15
+CNAME Token "age" found in line 2 column 5
+COLON Token ":" found in line 2 column 8
+Type Token "int" found in line 2 column 10
+COMMA Token "," found in line 2 column 13
+CNAME Token "score" found in line 3 column 5
+COLON Token ":" found in line 3 column 10
+Type Token "float" found in line 3 column 12
+RBRACE Token "}" found in line 4 column 1
+Keyword Token "main" found in line 6 column 1
+COLON Token ":" found in line 6 column 5
+LBRACE Token "{" found in line 6 column 7
+Keyword Token "var" found in line 7 column 5
+CNAME Token "p" found in line 7 column 9
+COLON Token ":" found in line 7 column 10
+CNAME Token "Person" found in line 7 column 12
+SEMICOLON Token ";" found in line 7 column 18
+CNAME Token "p" found in line 9 column 5
+DOT Token "." found in line 9 column 6
+CNAME Token "age" found in line 9 column 7
+EQUAL Token "=" found in line 9 column 11
+Integer constant Token "21" found in line 9 column 13
+SEMICOLON Token ";" found in line 9 column 15
+CNAME Token "p" found in line 10 column 5
+DOT Token "." found in line 10 column 6
+CNAME Token "score" found in line 10 column 7
+EQUAL Token "=" found in line 10 column 13
+Float constant Token "99.5" found in line 10 column 15
+SEMICOLON Token ";" found in line 10 column 19
+Keyword Token "print" found in line 12 column 5
+LPAR Token "(" found in line 12 column 10
+CNAME Token "p" found in line 12 column 11
+DOT Token "." found in line 12 column 12
+CNAME Token "age" found in line 12 column 13
+RPAR Token ")" found in line 12 column 16
+SEMICOLON Token ";" found in line 12 column 17
+Keyword Token "print" found in line 13 column 5
+LPAR Token "(" found in line 13 column 10
+CNAME Token "p" found in line 13 column 11
+DOT Token "." found in line 13 column 12
+CNAME Token "score" found in line 13 column 13
+RPAR Token ")" found in line 13 column 18
+SEMICOLON Token ";" found in line 13 column 19
+RBRACE Token "}" found in line 14 column 1
+
+Scanner time: 0.001819 seconds

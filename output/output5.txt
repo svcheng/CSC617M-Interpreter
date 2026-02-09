@@ -1,0 +1,53 @@
+Keyword Token "main" found in line 1 column 1
+COLON Token ":" found in line 1 column 5
+LBRACE Token "{" found in line 1 column 7
+Keyword Token "var" found in line 2 column 5
+CNAME Token "flag" found in line 2 column 9
+EQUAL Token "=" found in line 2 column 14
+CNAME Token "true" found in line 2 column 16
+SEMICOLON Token ";" found in line 2 column 20
+Keyword Token "var" found in line 3 column 5
+CNAME Token "ch" found in line 3 column 9
+EQUAL Token "=" found in line 3 column 12
+Character constant Token "'A'" found in line 3 column 14
+SEMICOLON Token ";" found in line 3 column 17
+Keyword Token "var" found in line 4 column 5
+CNAME Token "msg" found in line 4 column 9
+EQUAL Token "=" found in line 4 column 13
+String constant Token ""Hello"" found in line 4 column 15
+SEMICOLON Token ";" found in line 4 column 22
+Keyword Token "repeat" found in line 6 column 5
+LBRACE Token "{" found in line 6 column 12
+Keyword Token "scan" found in line 7 column 9
+LPAR Token "(" found in line 7 column 13
+CNAME Token "flag" found in line 7 column 14
+RPAR Token ")" found in line 7 column 18
+SEMICOLON Token ";" found in line 7 column 19
+Keyword Token "print" found in line 8 column 9
+LPAR Token "(" found in line 8 column 14
+CNAME Token "msg" found in line 8 column 15
+RPAR Token ")" found in line 8 column 18
+SEMICOLON Token ";" found in line 8 column 19
+RBRACE Token "}" found in line 9 column 5
+Keyword Token "until" found in line 9 column 7
+LPAR Token "(" found in line 9 column 13
+BANG Token "!" found in line 9 column 14
+CNAME Token "flag" found in line 9 column 15
+RPAR Token ")" found in line 9 column 19
+SEMICOLON Token ";" found in line 9 column 20
+Keyword Token "if" found in line 11 column 5
+LPAR Token "(" found in line 11 column 8
+CNAME Token "flag" found in line 11 column 9
+__ANON_0 Token "||" found in line 11 column 14
+CNAME Token "false" found in line 11 column 17
+RPAR Token ")" found in line 11 column 22
+LBRACE Token "{" found in line 11 column 24
+Keyword Token "print" found in line 12 column 9
+LPAR Token "(" found in line 12 column 14
+CNAME Token "ch" found in line 12 column 15
+RPAR Token ")" found in line 12 column 17
+SEMICOLON Token ";" found in line 12 column 18
+RBRACE Token "}" found in line 13 column 5
+RBRACE Token "}" found in line 14 column 1
+
+Scanner time: 0.001775 seconds

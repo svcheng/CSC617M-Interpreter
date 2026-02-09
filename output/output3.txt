@@ -1,0 +1,39 @@
+Type Token "int" found in line 1 column 1
+CNAME Token "add" found in line 1 column 5
+LPAR Token "(" found in line 1 column 8
+CNAME Token "x" found in line 1 column 9
+COLON Token ":" found in line 1 column 10
+Type Token "int" found in line 1 column 12
+COMMA Token "," found in line 1 column 15
+CNAME Token "y" found in line 1 column 17
+COLON Token ":" found in line 1 column 18
+Type Token "int" found in line 1 column 20
+RPAR Token ")" found in line 1 column 23
+LBRACE Token "{" found in line 1 column 25
+Keyword Token "return" found in line 2 column 5
+CNAME Token "x" found in line 2 column 12
+PLUS Token "+" found in line 2 column 14
+CNAME Token "y" found in line 2 column 16
+SEMICOLON Token ";" found in line 2 column 17
+RBRACE Token "}" found in line 3 column 1
+Keyword Token "main" found in line 5 column 1
+COLON Token ":" found in line 5 column 5
+LBRACE Token "{" found in line 5 column 7
+Keyword Token "var" found in line 6 column 5
+CNAME Token "result" found in line 6 column 9
+EQUAL Token "=" found in line 6 column 16
+CNAME Token "add" found in line 6 column 18
+LPAR Token "(" found in line 6 column 21
+Integer constant Token "3" found in line 6 column 22
+COMMA Token "," found in line 6 column 23
+Integer constant Token "4" found in line 6 column 25
+RPAR Token ")" found in line 6 column 26
+SEMICOLON Token ";" found in line 6 column 27
+Keyword Token "print" found in line 7 column 5
+LPAR Token "(" found in line 7 column 10
+CNAME Token "result" found in line 7 column 11
+RPAR Token ")" found in line 7 column 17
+SEMICOLON Token ";" found in line 7 column 18
+RBRACE Token "}" found in line 8 column 1
+
+Scanner time: 0.002450 seconds
