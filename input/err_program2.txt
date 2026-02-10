@@ -1,0 +1,4 @@
+main: {
+    var msg = "Hello world;
+    var ch = 'A;
+}

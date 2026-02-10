@@ -1,0 +1,18 @@
+Keyword Token "main" found in line 1 column 1
+COLON Token ":" found in line 1 column 5
+LBRACE Token "{" found in line 1 column 7
+Keyword Token "var" found in line 2 column 5
+Integer constant Token "123" found in line 2 column 9
+CNAME Token "abc" found in line 2 column 12
+EQUAL Token "=" found in line 2 column 16
+Integer constant Token "5" found in line 2 column 18
+SEMICOLON Token ";" found in line 2 column 19
+Keyword Token "let" found in line 3 column 5
+CNAME Token "x" found in line 3 column 9
+EQUAL Token "=" found in line 3 column 11
+Integer constant Token "45" found in line 3 column 13
+CNAME Token "y" found in line 3 column 15
+SEMICOLON Token ";" found in line 3 column 16
+RBRACE Token "}" found in line 4 column 1
+
+Scanner time: 0.002252 seconds

@@ -1,0 +1,47 @@
+Keyword Token "main" found in line 1 column 1
+COLON Token ":" found in line 1 column 5
+LBRACE Token "{" found in line 1 column 7
+Keyword Token "var" found in line 2 column 5
+CNAME Token "msg" found in line 2 column 9
+EQUAL Token "=" found in line 2 column 13
+Lexer error: No terminal matches '"' in the current parser context, at line 2 col 15
+
+    var msg = "Hello world;
+              ^
+Expected one of: 
+	* "&&"
+	* SLASH
+	* LESSTHAN
+	* BANG
+	* CNAME
+	* "<="
+	* BOOLVAL
+	* "=="
+	* IDENTIFIER
+	* MORETHAN
+	* CHARVAL
+	* "||"
+	* RSQB
+	* ">="
+	* STRVAL
+	* COLON
+	* LPAR
+	* LSQB
+	* RBRACE
+	* LBRACE
+	* FLOAT
+	* MINUS
+	* SEMICOLON
+	* DOT
+	* "!="
+	* COMMA
+	* RPAR
+	* INT
+	* PLUS
+	* STAR
+	* EQUAL
+
+Previous tokens: Token('EQUAL', '=')
+
+
+Scanner time: 0.002155 seconds

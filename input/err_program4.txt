@@ -1,0 +1,4 @@
+main: {
+    var arr: int arr[5a];
+    arr[2$] = 10;
+}

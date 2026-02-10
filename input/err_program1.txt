@@ -1,0 +1,4 @@
+main: {
+    var 123abc = 5;
+    let x = 45y;
+}

@@ -1,0 +1,57 @@
+Keyword Token "main" found in line 1 column 1
+COLON Token ":" found in line 1 column 5
+LBRACE Token "{" found in line 1 column 7
+Keyword Token "var" found in line 2 column 5
+Keyword Token "arr" found in line 2 column 9
+COLON Token ":" found in line 2 column 12
+Type Token "int" found in line 2 column 14
+Keyword Token "arr" found in line 2 column 18
+LSQB Token "[" found in line 2 column 21
+Integer constant Token "5" found in line 2 column 22
+CNAME Token "a" found in line 2 column 23
+RSQB Token "]" found in line 2 column 24
+SEMICOLON Token ";" found in line 2 column 25
+Keyword Token "arr" found in line 3 column 5
+LSQB Token "[" found in line 3 column 8
+Integer constant Token "2" found in line 3 column 9
+Lexer error: No terminal matches '$' in the current parser context, at line 3 col 10
+
+    arr[2$] = 10;
+         ^
+Expected one of: 
+	* FLOAT
+	* RSQB
+	* RPAR
+	* INT
+	* COMMA
+	* SEMICOLON
+	* IDENTIFIER
+	* PLUS
+	* MINUS
+	* SLASH
+	* EQUAL
+	* RBRACE
+	* STRVAL
+	* LESSTHAN
+	* COLON
+	* STAR
+	* CNAME
+	* BOOLVAL
+	* "!="
+	* LSQB
+	* LBRACE
+	* LPAR
+	* CHARVAL
+	* "||"
+	* MORETHAN
+	* DOT
+	* "=="
+	* ">="
+	* BANG
+	* "&&"
+	* "<="
+
+Previous tokens: Token('INT', '2')
+
+
+Scanner time: 0.002088 seconds

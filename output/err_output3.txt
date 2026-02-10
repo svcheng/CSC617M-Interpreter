@@ -1,0 +1,48 @@
+Keyword Token "main" found in line 1 column 1
+COLON Token ":" found in line 1 column 5
+LBRACE Token "{" found in line 1 column 7
+Keyword Token "var" found in line 2 column 5
+CNAME Token "x" found in line 2 column 9
+EQUAL Token "=" found in line 2 column 11
+Integer constant Token "5" found in line 2 column 13
+Lexer error: No terminal matches '@' in the current parser context, at line 2 col 15
+
+    var x = 5 @ 3;
+              ^
+Expected one of: 
+	* COMMA
+	* "||"
+	* MINUS
+	* IDENTIFIER
+	* DOT
+	* PLUS
+	* "!="
+	* LESSTHAN
+	* "=="
+	* LSQB
+	* SEMICOLON
+	* ">="
+	* BANG
+	* STRVAL
+	* CNAME
+	* RPAR
+	* LPAR
+	* INT
+	* FLOAT
+	* MORETHAN
+	* EQUAL
+	* CHARVAL
+	* COLON
+	* RSQB
+	* "&&"
+	* STAR
+	* "<="
+	* RBRACE
+	* SLASH
+	* LBRACE
+	* BOOLVAL
+
+Previous tokens: Token('INT', '5')
+
+
+Scanner time: 0.002077 seconds

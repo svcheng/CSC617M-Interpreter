@@ -1,0 +1,53 @@
+Keyword Token "main" found in line 1 column 1
+COLON Token ":" found in line 1 column 5
+LBRACE Token "{" found in line 1 column 7
+Keyword Token "var" found in line 2 column 5
+CNAME Token "num" found in line 2 column 9
+EQUAL Token "=" found in line 2 column 13
+Float constant Token "12.3" found in line 2 column 15
+Float constant Token ".4" found in line 2 column 19
+SEMICOLON Token ";" found in line 2 column 21
+Keyword Token "var" found in line 3 column 5
+CNAME Token "c" found in line 3 column 9
+EQUAL Token "=" found in line 3 column 11
+Lexer error: No terminal matches ''' in the current parser context, at line 3 col 13
+
+    var c = 'AB';
+            ^
+Expected one of: 
+	* BOOLVAL
+	* PLUS
+	* SEMICOLON
+	* BANG
+	* CHARVAL
+	* EQUAL
+	* STAR
+	* SLASH
+	* STRVAL
+	* LSQB
+	* "<="
+	* "||"
+	* RPAR
+	* MINUS
+	* "&&"
+	* "=="
+	* LPAR
+	* CNAME
+	* COLON
+	* DOT
+	* ">="
+	* MORETHAN
+	* RBRACE
+	* INT
+	* COMMA
+	* LBRACE
+	* RSQB
+	* IDENTIFIER
+	* FLOAT
+	* "!="
+	* LESSTHAN
+
+Previous tokens: Token('EQUAL', '=')
+
+
+Scanner time: 0.012769 seconds

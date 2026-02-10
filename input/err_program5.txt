@@ -1,0 +1,5 @@
+main: {
+    var num = 12.3.4;
+    var c = 'AB';
+    var weird = 😀;
+}
