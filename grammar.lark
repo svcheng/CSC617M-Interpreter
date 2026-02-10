@@ -5,6 +5,8 @@
 %import common.WS
 %ignore WS
 
+INVALID_IDENT.10: /\d+[a-zA-Z_]\w*/
+
 %import common.SIGNED_INT       -> INT
 %import common.SIGNED_FLOAT     -> FLOAT
 %import common.ESCAPED_STRING   -> STRVAL

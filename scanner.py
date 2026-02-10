@@ -34,6 +34,8 @@ CLASS_MAP = {
     "VOID": "Keyword",
     "PRINT": "Keyword",
     "SCAN": "Keyword",
+    # errors
+    "INVALID_IDENT": "Invalid Identifier",
 }
 
 def classify(tok):
