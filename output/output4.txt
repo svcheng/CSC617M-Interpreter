@@ -19,19 +19,13 @@ Keyword Token "for" found in line 5 column 5
 LPAR Token "(" found in line 5 column 9
 CNAME Token "i" found in line 5 column 10
 SEMICOLON Token ";" found in line 5 column 11
-CNAME Token "i" found in line 5 column 13
-LESSTHAN Token "<" found in line 5 column 15
-Integer constant Token "5" found in line 5 column 17
+Integer constant Token "1" found in line 5 column 13
+SEMICOLON Token ";" found in line 5 column 14
+Integer constant Token "10" found in line 5 column 16
 SEMICOLON Token ";" found in line 5 column 18
-CNAME Token "i" found in line 5 column 20
-PLUS Token "+" found in line 5 column 22
-Integer constant Token "1" found in line 5 column 24
-SEMICOLON Token ";" found in line 5 column 25
-CNAME Token "i" found in line 5 column 27
-PLUS Token "+" found in line 5 column 29
-Integer constant Token "1" found in line 5 column 31
-RPAR Token ")" found in line 5 column 32
-LBRACE Token "{" found in line 5 column 34
+Integer constant Token "2" found in line 5 column 20
+RPAR Token ")" found in line 5 column 21
+LBRACE Token "{" found in line 5 column 23
 CNAME Token "arrNums" found in line 6 column 9
 LSQB Token "[" found in line 6 column 16
 CNAME Token "i" found in line 6 column 17
@@ -66,4 +60,4 @@ SEMICOLON Token ";" found in line 11 column 26
 RBRACE Token "}" found in line 12 column 5
 RBRACE Token "}" found in line 13 column 1
 
-Scanner time: 0.002044 seconds
+Scanner time: 0.002513 seconds
