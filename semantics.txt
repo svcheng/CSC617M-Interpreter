@@ -32,4 +32,3 @@ Run-time Semantics
 
 Possible additional language features:
 - built-in func to convert char to int and vice-versa
-- extending operators to work with strings/arrays/others

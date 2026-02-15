@@ -214,7 +214,9 @@ class InvalidIndexTypeError(CustomError):
             case _:
                 ord_str = str(order) + "th"
 
-        error_msg = f'"Array indices should be integers but {ord_str} index has type "{wrong_type}"'
+        error_msg = (
+            f'Indices should be integers but {ord_str} index has type "{wrong_type}"'
+        )
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,

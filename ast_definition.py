@@ -104,7 +104,7 @@ class Type:
     # note that array types may not be equal even when this passes due to dimensions being unkown until runtime
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Type):
-            raise TypeError("Equality comparison between Type obj and non-Type obj")
+            return False
         return str(self.name) == str(other.name)
 
     def __ne__(self, other: object) -> bool:
@@ -116,16 +116,11 @@ class Type:
         return str(self.name)
 
 
-@dataclass
 class NotArrayType(Type):
     pass
 
 
-@dataclass
 class ArrayType(Type):
-    base_type: NotArrayType
-    size: list["Expr"]
-
     def __init__(self, base_type: NotArrayType, size: list["Expr"]):
         self.name = "arr"
         self.base_type = base_type

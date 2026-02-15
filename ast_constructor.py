@@ -48,7 +48,7 @@ def new_bin_op(meta, children, datatype: Optional[Type], op: str):
 
 
 def new_bool_op(meta, children, op: str):
-    return new_bin_op(meta=meta, children=children, datatype=NotArrayType(BOOL), op=op)
+    return new_bin_op(meta=meta, children=children, datatype=BOOL, op=op)
 
 
 @v_args(meta=True)
@@ -240,7 +240,7 @@ class ASTConstructor(Transformer):
         return Literal(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
-            datatype=NotArrayType(INT),
+            datatype=INT,
             value=int(raw_value),
         )
 
@@ -250,7 +250,7 @@ class ASTConstructor(Transformer):
         return Literal(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
-            datatype=NotArrayType(FLOAT),
+            datatype=FLOAT,
             value=float(raw_value),
         )
 
@@ -260,7 +260,7 @@ class ASTConstructor(Transformer):
         return Literal(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
-            datatype=NotArrayType(BOOL),
+            datatype=BOOL,
             value=raw_value == "true",
         )
 
@@ -270,7 +270,7 @@ class ASTConstructor(Transformer):
         return Literal(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
-            datatype=NotArrayType(CHAR),
+            datatype=CHAR,
             value=raw_value[1:-1],
         )
 
@@ -280,7 +280,7 @@ class ASTConstructor(Transformer):
         return Literal(
             scope=None,
             meta_info=MetaInfo.from_meta(meta),
-            datatype=NotArrayType(STR),
+            datatype=STR,
             value=raw_value[1:-1],
         )
 

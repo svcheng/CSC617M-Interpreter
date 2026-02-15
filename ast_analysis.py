@@ -1,4 +1,3 @@
-from ast import Not
 from typing import Optional
 
 from lark import Lark
@@ -60,7 +59,6 @@ from errors import (
     ReturnValueExistenceError,
     TypeMismatchError,
     VoidExpressionError,
-    Warning,
 )
 
 BASIC_TYPES = {str(INT), str(FLOAT), str(BOOL), str(CHAR), str(STR)}
@@ -658,7 +656,6 @@ class ProgramAnalyzer:
                         var_type=str(var_type),
                         expected_type="arr or str",
                     )
-
             case FieldAccess(scope, _, _, record_name, attribute):
                 assert scope is not None
 
@@ -695,29 +692,31 @@ class ProgramAnalyzer:
                 if left_type is None or right_type is None:
                     raise VoidExpressionError(self.program_str, meta)
                 left_type_name, right_type_name = (
-                    str(left_type.name),
-                    str(right_type.name),
+                    str(left_type),
+                    str(right_type),
                 )
 
                 match op:
                     case "+" | "-" | "*" | "/":
-                        # inputs must be numerical
-                        if (
-                            left_type not in numerical_types
-                            or right_type not in numerical_types
+                        # inputs must be numerical (exception: string addition)
+                        if left_type == STR and right_type == STR and op == "+":
+                            op_type = STR
+                        elif (
+                            left_type in numerical_types
+                            and right_type in numerical_types
                         ):
+                            # type cast to float if at least 1 arg is float
+                            if FLOAT in (left_type, right_type):
+                                op_type = FLOAT
+                            else:
+                                op_type = INT
+                        else:
                             raise OperatorTypeError(
                                 self.program_str,
                                 meta,
                                 op=op,
                                 type_names=[left_type_name, right_type_name],
                             )
-
-                        # type cast to float if at least 1 arg is float
-                        if FLOAT in (left_type, right_type):
-                            op_type = FLOAT
-                        else:
-                            op_type = INT
 
                         node.datatype = op_type
                     case "==" | "!=" | "<" | "<=" | ">" | ">=":
@@ -882,9 +881,8 @@ if __name__ == "__main__":
         return a;
     }
     main: {
-        var a: int arr[4];
-        var s: str;
-        let x = s[true, 1];
+        var x: str arr[5];
+        let y = x[1];
     }
     """
     parser = Lark.open(
