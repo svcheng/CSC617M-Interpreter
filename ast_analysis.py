@@ -1,3 +1,4 @@
+from ast import Not
 from typing import Optional
 
 from lark import Lark
@@ -22,7 +23,6 @@ from ast_definition import (
     Invocation,
     Literal,
     Node,
-    NotArrayType,
     PrintStmt,
     Program,
     RepeatLoop,
@@ -63,7 +63,7 @@ from errors import (
     Warning,
 )
 
-BASIC_TYPES = {INT, FLOAT, BOOL, CHAR, STR}
+BASIC_TYPES = {str(INT), str(FLOAT), str(BOOL), str(CHAR), str(STR)}
 RESERVED_WORDS = {
     "true",
     "false",
@@ -357,9 +357,7 @@ class ProgramAnalyzer:
                         self.build_var_tables(stmt, else_scope)
             case ForLoop(_, _, iterator_name, range_start, range_end, step, body):
                 node.scope = Scope(cur_scope, dict())
-                node.scope.insert_varname(
-                    str(iterator_name), VarInfo(False, NotArrayType("int"))
-                )
+                node.scope.insert_varname(str(iterator_name), VarInfo(False, INT))
                 self.build_var_tables(range_start, cur_scope)
                 self.build_var_tables(range_end, cur_scope)
                 self.build_var_tables(step, cur_scope)
@@ -418,7 +416,7 @@ class ProgramAnalyzer:
                 # record name should be a record and not some other var
                 var_type = cur_scope.get_type(record_name)
                 assert var_type is not None  # assert just here to prevent IDE warning
-                var_type_name = str(var_type.name)
+                var_type_name = str(var_type)
                 if var_type_name not in self.type_table or var_type_name in BASIC_TYPES:
                     raise InvalidIdentifierTypeError(
                         self.program_str,
@@ -530,7 +528,7 @@ class ProgramAnalyzer:
                 cond_type = self.check_types(cond)
                 if cond_type is None:
                     raise VoidExpressionError(self.program_str, meta)
-                if cond_type != NotArrayType(BOOL):
+                if cond_type != BOOL:
                     raise InvalidConditionError(
                         self.program_str, meta, cond_type=str(cond_type.name)
                     )
@@ -552,7 +550,7 @@ class ProgramAnalyzer:
                     param_type = self.check_types(param)
                     if param_type is None:
                         raise VoidExpressionError(self.program_str, meta)
-                    if param_type != NotArrayType(INT):
+                    if param_type != INT:
                         raise MalformedForLoopError(
                             self.program_str,
                             meta,
@@ -571,7 +569,7 @@ class ProgramAnalyzer:
                 cond_type = self.check_types(cond)
                 if cond_type is None:
                     raise VoidExpressionError(self.program_str, meta)
-                if cond_type != NotArrayType(BOOL):
+                if cond_type != BOOL:
                     raise InvalidConditionError(
                         self.program_str, meta, cond_type=str(cond_type.name)
                     )
@@ -593,13 +591,13 @@ class ProgramAnalyzer:
                     raise ImmutableScanTarget(self.program_str, meta)
 
                 # lval should be string
-                if lval_type != NotArrayType(STR):
+                if lval_type != STR:
                     raise IncorrectParameterTypeError(
                         self.program_str,
                         meta,
                         func_name="scan",
                         arg_name=None,
-                        arg_type=STR,
+                        arg_type=str(STR),
                         param_type=str(lval_type.name),
                     )
             ###############
@@ -614,43 +612,53 @@ class ProgramAnalyzer:
                 assert scope is not None
                 arr_name = str(array_name)
 
-                # get base type of array (and check that it is actually an array)
-                var_type = scope.get_type(arr_name)
-                assert var_type is not None
-                if not isinstance(var_type, ArrayType):
-                    raise InvalidIdentifierTypeError(
-                        self.program_str,
-                        meta,
-                        var_name=arr_name,
-                        var_type=str(var_type.name),
-                        expected_type="arr",
-                    )
-                base_type = var_type.base_type
-
-                # check that number of indices matches array dimension
-                num_indices = len(indices)
-                arr_dim = len(var_type.size)
-                if num_indices != arr_dim:
-                    raise IncorrectIndexDimensionError(
-                        self.program_str,
-                        meta,
-                        arr_name=arr_name,
-                        expected_dim=arr_dim,
-                        num_indices=num_indices,
-                    )
-
                 # check that indices are ints
                 for i, idx in enumerate(indices):
                     idx_type = self.check_types(idx)
                     if idx_type is None:
                         raise VoidExpressionError(self.program_str, meta)
-                    if idx_type != NotArrayType(INT):
+                    if idx_type != INT:
                         raise InvalidIndexTypeError(
-                            self.program_str, meta, i + 1, wrong_type=str(idx_type.name)
+                            self.program_str, meta, i + 1, wrong_type=str(idx_type)
                         )
 
-                node.datatype = base_type
-                return base_type
+                # check if number of indices matches dimension
+                var_type = scope.get_type(arr_name)
+                assert var_type is not None
+
+                num_indices = len(indices)
+                if isinstance(var_type, ArrayType):
+                    arr_dim = len(var_type.size)
+                    if num_indices != arr_dim:
+                        raise IncorrectIndexDimensionError(
+                            self.program_str,
+                            meta,
+                            arr_name=arr_name,
+                            expected_dim=arr_dim,
+                            num_indices=num_indices,
+                        )
+                    node.datatype = var_type.base_type
+                    return node.datatype
+                elif var_type == STR:
+                    if num_indices != 1:
+                        raise IncorrectIndexDimensionError(
+                            self.program_str,
+                            meta,
+                            arr_name=arr_name,
+                            expected_dim=1,
+                            num_indices=num_indices,
+                        )
+                    node.datatype = CHAR
+                    return node.datatype
+                else:
+                    raise InvalidIdentifierTypeError(
+                        self.program_str,
+                        meta,
+                        var_name=arr_name,
+                        var_type=str(var_type),
+                        expected_type="arr or str",
+                    )
+
             case FieldAccess(scope, _, _, record_name, attribute):
                 assert scope is not None
 
@@ -672,7 +680,7 @@ class ProgramAnalyzer:
                     raise VoidExpressionError(self.program_str, meta)
 
                 # for now, the only unary op is logical negation
-                if arg_type != NotArrayType(BOOL):
+                if arg_type != BOOL:
                     raise OperatorTypeError(
                         self.program_str, meta, op=op, type_names=[str(arg_type.name)]
                     )
@@ -680,10 +688,7 @@ class ProgramAnalyzer:
                 node.datatype = arg_type
                 return arg_type
             case BinOp(scope, meta, _, op, left, right):
-                BOOL_TYPE = NotArrayType(BOOL)
-                INT_TYPE = NotArrayType(INT)
-                FLOAT_TYPE = NotArrayType(FLOAT)
-                numerical_types = (INT_TYPE, FLOAT_TYPE)
+                numerical_types = (INT, FLOAT)
 
                 left_type = self.check_types(left)
                 right_type = self.check_types(right)
@@ -709,10 +714,10 @@ class ProgramAnalyzer:
                             )
 
                         # type cast to float if at least 1 arg is float
-                        if FLOAT_TYPE in (left_type, right_type):
-                            op_type = FLOAT_TYPE
+                        if FLOAT in (left_type, right_type):
+                            op_type = FLOAT
                         else:
-                            op_type = INT_TYPE
+                            op_type = INT
 
                         node.datatype = op_type
                     case "==" | "!=" | "<" | "<=" | ">" | ">=":
@@ -727,10 +732,10 @@ class ProgramAnalyzer:
                                 op=op,
                                 type_names=[left_type_name, right_type_name],
                             )
-                        node.datatype = BOOL_TYPE
+                        node.datatype = BOOL
                     case "||" | "&&":
                         # inputs must be bools
-                        if left_type != BOOL_TYPE or right_type != BOOL_TYPE:
+                        if left_type != BOOL or right_type != BOOL:
                             raise OperatorTypeError(
                                 self.program_str,
                                 meta,
@@ -738,7 +743,7 @@ class ProgramAnalyzer:
                                 type_names=[left_type_name, right_type_name],
                             )
 
-                        node.datatype = BOOL_TYPE
+                        node.datatype = BOOL
                 return node.datatype
             case Invocation(scope, meta, _, name, params):
                 assert scope is not None
@@ -858,7 +863,9 @@ class ProgramAnalyzer:
         except CustomError as e:
             print("Compilation failed with the following error:")
             print(e)
-        except Exception as e:  # if this case is reached there is a bug
+        except (
+            Exception
+        ) as e:  # if this case is reached there is a bug (in our program)
             raise e
 
         for warning in self.warnings:
@@ -875,6 +882,9 @@ if __name__ == "__main__":
         return a;
     }
     main: {
+        var a: int arr[4];
+        var s: str;
+        let x = s[true, 1];
     }
     """
     parser = Lark.open(

@@ -235,7 +235,7 @@ class IncorrectIndexDimensionError(CustomError):
         num_indices: int,
     ):
         msg_prefix = self.error_name + " found in "
-        error_msg = f'Array "{arr_name}" has dimension {expected_dim} but {num_indices} {"index" if num_indices == 1 else "indices"} given'
+        error_msg = f'"{arr_name}" has dimension {expected_dim} but {num_indices} {"index" if num_indices == 1 else "indices"} given'
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,

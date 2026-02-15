@@ -9,9 +9,6 @@ from lark.tree import Meta
 # =====================
 
 
-INT, FLOAT, BOOL, CHAR, STR = "int", "float", "bool", "char", "str"
-
-
 @dataclass
 class VarInfo:
     is_constant: bool
@@ -114,6 +111,9 @@ class Type:
         if not isinstance(other, Type):
             raise TypeError("Equality comparison between Type obj and non-Type obj")
         return str(self.name) != str(other.name)
+
+    def __str__(self) -> str:
+        return str(self.name)
 
 
 @dataclass
@@ -289,3 +289,12 @@ class BinOp(Expr):
 class Invocation(Expr):
     name: Identifier
     args: list[Expr]
+
+
+#################### Base Types
+
+INT = NotArrayType("int")
+FLOAT = NotArrayType("float")
+BOOL = NotArrayType("bool")
+CHAR = NotArrayType("char")
+STR = NotArrayType("str")

@@ -31,6 +31,5 @@ Run-time Semantics
 - type checking for array variable assignment and returning arrays (dimensions only known at runtime)
 
 Possible additional language features:
-- string access
 - built-in func to convert char to int and vice-versa
 - extending operators to work with strings/arrays/others
