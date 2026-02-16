@@ -1,6 +1,6 @@
 from typing import Optional
 
-from ast_constructor import MetaInfo
+from ast_construction import MetaInfo
 from ast_definition import Type
 
 
@@ -457,6 +457,45 @@ class InvalidReturnValueError(CustomError):
     ):
         msg_prefix = self.error_name + f' found in definition of "{func_name}", '
         error_msg = f'Returning value of type "{actual_type}" but function has return type "{expected_type}"'
+        super().__init__(
+            msg_prefix=msg_prefix,
+            error_msg=error_msg,
+            program_str=program_str,
+            meta_info=meta_info,
+        )
+
+
+class InvalidCastArgumentError(CustomError):
+    error_name = "INVALID-CAST-ARGUMENT ERROR"
+
+    def __init__(
+        self,
+        program_str: str,
+        meta_info: MetaInfo,
+        arg_type: str,
+    ):
+        msg_prefix = self.error_name + " found in "
+        error_msg = f'"{arg_type}" cannot be cast'
+        super().__init__(
+            msg_prefix=msg_prefix,
+            error_msg=error_msg,
+            program_str=program_str,
+            meta_info=meta_info,
+        )
+
+
+class InvalidCastTargetError(CustomError):
+    error_name = "INVALID-CAST-TARGET ERROR"
+
+    def __init__(
+        self,
+        program_str: str,
+        meta_info: MetaInfo,
+        arg_type: str,
+        target_type: str,
+    ):
+        msg_prefix = self.error_name + " found in "
+        error_msg = f'"{target_type}" is not a valid cast target for parameter of type "{arg_type}"'
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,

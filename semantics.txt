@@ -13,22 +13,21 @@ Syntax rules (besides grammar rules) (all done)
 Compile-time Semantics (all done)
 - constants cannot be re-assigned
 - constants cannot be records and arrays (these are mutable)
+- scoping rule
+    - only existing types and functions can be referenced
+    - variables cannot be referenced before they are declared
+    - to determine type of variable when its name is bound to more than 1 variable, choose the one in the innermost scope
+    - conditional and loop blocks have an inner scope
 - type checking
     - check that types are correct: operands, function parameters (including print and scan), assignment rvalues, for loop parameters, conditions, etc.
     - type casting in arithmetic ops between numbers (int to float)
     - type inference for constant/variable declaration (e.g. var x = 5+1; <- compiler should know x is integer)
     - array indices and sizes must be integers
-- scoping rule
-    - to determine type of variable when its name is bound to more than 1 variable, choose the one in the innermost scope
-    - conditional and loop blocks have an inner scope
 
 Run-time Semantics
 - to determine value of variable when its name is bound to more than 1 variable, choose the one in the innermost scope
 - everything is pass by value except records and arrays
 - array access bounds checking
 - default values (instead of NULL, like in C)
-- type casting in arithmetic ops
-- type checking for array variable assignment and returning arrays (dimensions only known at runtime)
-
-Possible additional language features:
-- built-in func to convert char to int and vice-versa
+- auto type casting in arithmetic ops
+- type checking for array variable assignment (assigning variable of type array to another variable of type array) and returning arrays (exact size of array can only be known at runtime)

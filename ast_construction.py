@@ -1,3 +1,4 @@
+from tkinter.constants import NONE
 from typing import Optional
 
 from lark import Lark, Transformer, v_args
@@ -12,6 +13,7 @@ from ast_definition import (
     ArrayType,
     Assignment,
     BinOp,
+    Cast,
     Conditional,
     ConstDec,
     FieldAccess,
@@ -59,11 +61,60 @@ class ASTConstructor(Transformer):
     def return_children(self, _, children):
         return children
 
+    # =====================
+    # Terminals
+    # =====================
+
     def IDENTIFIER(self, token):
         return Identifier(
             scope=None,
             meta_info=MetaInfo.from_token(token),
             name=token.value,
+        )
+
+    def INT(self, token):
+        raw_value = token.value
+        return Literal(
+            scope=None,
+            meta_info=MetaInfo.from_token(token),
+            datatype=INT,
+            value=int(raw_value),
+        )
+
+    def FLOAT(self, token):
+        raw_value = token.value
+        return Literal(
+            scope=None,
+            meta_info=MetaInfo.from_token(token),
+            datatype=FLOAT,
+            value=float(raw_value),
+        )
+
+    def BOOLVAL(self, token):
+        raw_value = token.value
+        return Literal(
+            scope=None,
+            meta_info=MetaInfo.from_token(token),
+            datatype=BOOL,
+            value=raw_value == "true",
+        )
+
+    def CHARVAL(self, token):
+        raw_value = token.value
+        return Literal(
+            scope=None,
+            meta_info=MetaInfo.from_token(token),
+            datatype=CHAR,
+            value=raw_value[1:-1],
+        )
+
+    def STRVAL(self, token):
+        raw_value = token.value
+        return Literal(
+            scope=None,
+            meta_info=MetaInfo.from_token(token),
+            datatype=STR,
+            value=raw_value[1:-1],
         )
 
     # =====================
@@ -234,56 +285,6 @@ class ASTConstructor(Transformer):
     # Expressions: Scalars
     # =====================
 
-    def int_literal(self, meta, children):
-        token = children[0]
-        raw_value = token.value
-        return Literal(
-            scope=None,
-            meta_info=MetaInfo.from_meta(meta),
-            datatype=INT,
-            value=int(raw_value),
-        )
-
-    def float_literal(self, meta, children):
-        token = children[0]
-        raw_value = token.value
-        return Literal(
-            scope=None,
-            meta_info=MetaInfo.from_meta(meta),
-            datatype=FLOAT,
-            value=float(raw_value),
-        )
-
-    def bool_literal(self, meta, children):
-        token = children[0]
-        raw_value = token.value
-        return Literal(
-            scope=None,
-            meta_info=MetaInfo.from_meta(meta),
-            datatype=BOOL,
-            value=raw_value == "true",
-        )
-
-    def char_literal(self, meta, children):
-        token = children[0]
-        raw_value = token.value
-        return Literal(
-            scope=None,
-            meta_info=MetaInfo.from_meta(meta),
-            datatype=CHAR,
-            value=raw_value[1:-1],
-        )
-
-    def str_literal(self, meta, children):
-        token = children[0]
-        raw_value = token.value
-        return Literal(
-            scope=None,
-            meta_info=MetaInfo.from_meta(meta),
-            datatype=STR,
-            value=raw_value[1:-1],
-        )
-
     def arr_access(self, meta, children):
         array_name, indices = children
         return ArrAccess(
@@ -315,6 +316,16 @@ class ASTConstructor(Transformer):
             datatype=None,
             name=name,
             args=args,
+        )
+
+    def cast(self, meta, children):
+        _, arg, target_type = children
+        return Cast(
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta),
+            datatype=None,
+            arg=arg,
+            target_type=target_type,
         )
 
     # =====================
@@ -372,12 +383,13 @@ if __name__ == "__main__":
     parser = Lark.open(
         "grammar.lark", start="program", parser="lalr", propagate_positions=True
     )
-    s = r"""
+    s = """
     main: {
-        let x = '\';
+        let x = cast(x, "int");
     }
     """
 
     parse_tree = parser.parse(s)
+    print(parse_tree.pretty())
     ast = ASTConstructor().transform(parse_tree)
-    print(ast)
+    print(ast.main_block[0].value)

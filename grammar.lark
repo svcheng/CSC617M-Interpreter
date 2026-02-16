@@ -39,6 +39,7 @@ ARR: "arr"
 VOID: "void"
 PRINT: "print"
 SCAN: "scan"
+CAST: "cast"
 
 // =====================
 // Program Structure
@@ -125,18 +126,21 @@ scan_stmt: SCAN "(" lvalue ")" ";"
         | arr_access
         | field_access
         | invocation
+        | cast
 
-?literal: INT   -> int_literal
-        | FLOAT  -> float_literal
-        | BOOLVAL -> bool_literal
-        | CHARVAL -> char_literal
-        | STRVAL -> str_literal
+?literal: INT
+        | FLOAT
+        | BOOLVAL
+        | CHARVAL
+        | STRVAL
 
 arr_access: IDENTIFIER "[" exprs "]"
 field_access: IDENTIFIER "." IDENTIFIER
 
 invocation: IDENTIFIER "(" [exprs] ")"
 exprs: expr ("," expr)*
+
+cast: CAST "(" expr "," STRVAL ")"
 
 ?expr: expr "||" e1      -> lor
      | e1

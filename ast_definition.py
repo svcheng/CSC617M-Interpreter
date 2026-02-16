@@ -13,7 +13,7 @@ from lark.tree import Meta
 class VarInfo:
     is_constant: bool
     # quotations below so that IDE does not complain that Type is not defined
-    datatype: Optional["Type"]  # type: ignore # datatype=None for variables declared with assignment
+    datatype: Optional["Type"]  # datatype=None for variables declared with assignment
 
 
 @dataclass
@@ -284,6 +284,12 @@ class BinOp(Expr):
 class Invocation(Expr):
     name: Identifier
     args: list[Expr]
+
+
+@dataclass
+class Cast(Expr):
+    arg: Expr
+    target_type: Literal
 
 
 #################### Base Types

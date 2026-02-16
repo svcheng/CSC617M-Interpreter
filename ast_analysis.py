@@ -2,7 +2,7 @@ from typing import Optional
 
 from lark import Lark
 
-from ast_constructor import ASTConstructor
+from ast_construction import ASTConstructor
 from ast_definition import (
     BOOL,
     CHAR,
@@ -13,6 +13,7 @@ from ast_definition import (
     ArrayType,
     Assignment,
     BinOp,
+    Cast,
     Conditional,
     ConstDec,
     FieldAccess,
@@ -22,6 +23,7 @@ from ast_definition import (
     Invocation,
     Literal,
     Node,
+    NotArrayType,
     PrintStmt,
     Program,
     RepeatLoop,
@@ -44,6 +46,8 @@ from errors import (
     IncorrectParameterTypeError,
     InvalidAttributeNameError,
     InvalidBaseTypeError,
+    InvalidCastArgumentError,
+    InvalidCastTargetError,
     InvalidConditionError,
     InvalidIdentifierTypeError,
     InvalidIndexTypeError,
@@ -80,6 +84,7 @@ RESERVED_WORDS = {
     "void",
     "print",
     "scan",
+    "cast",
 } | BASIC_TYPES
 
 ################################################################
@@ -315,12 +320,12 @@ class ProgramAnalyzer:
                         self.build_var_tables(dim, cur_scope)
                 elif (
                     declared_type is not None
-                    and str(declared_type.name) not in self.type_table
+                    and str(declared_type) not in self.type_table
                 ):
                     raise NonExistentNameError(
                         self.program_str,
                         meta,
-                        identifier=str(declared_type.name),
+                        identifier=str(declared_type),
                         expected_construct="type",
                     )
 
@@ -469,6 +474,23 @@ class ProgramAnalyzer:
 
                 for arg in args:
                     self.build_var_tables(arg, cur_scope)
+            case Cast():
+                # check that target type is a real (NotArray) type
+                target_type = node.target_type.value
+                if (
+                    target_type not in BASIC_TYPES
+                    and target_type not in self.type_table
+                    and target_type != "arr"
+                ):
+                    raise NonExistentNameError(
+                        self.program_str,
+                        node.meta_info,
+                        identifier=target_type,
+                        expected_construct="type",
+                    )
+
+                node.scope = cur_scope
+                self.build_var_tables(node.arg, cur_scope)
             case _:
                 pass
 
@@ -684,7 +706,7 @@ class ProgramAnalyzer:
 
                 node.datatype = arg_type
                 return arg_type
-            case BinOp(scope, meta, _, op, left, right):
+            case BinOp(_, meta, _, op, left, right):
                 numerical_types = (INT, FLOAT)
 
                 left_type = self.check_types(left)
@@ -744,8 +766,7 @@ class ProgramAnalyzer:
 
                         node.datatype = BOOL
                 return node.datatype
-            case Invocation(scope, meta, _, name, params):
-                assert scope is not None
+            case Invocation(_, meta, _, name, params):
                 func_dec = self.func_table[str(name)]
 
                 # check param types
@@ -769,6 +790,40 @@ class ProgramAnalyzer:
 
                 node.datatype = func_dec.return_type  # may be None if func is void
                 return func_dec.return_type
+            case Cast(_, meta, _, arg, target_type):
+                # only basic types can be cast
+                arg_type = self.check_types(arg)
+                if arg_type is None:
+                    raise VoidExpressionError(self.program_str, meta)
+                if str(arg_type) not in BASIC_TYPES:
+                    raise InvalidCastArgumentError(
+                        self.program_str, meta, arg_type=str(arg_type)
+                    )
+
+                # check target_type should be basic type
+                # and enforce type cast rules
+                if arg_type in (INT, FLOAT):
+                    valid_targets = [INT, FLOAT, BOOL, CHAR, STR]
+                elif arg_type == BOOL:
+                    valid_targets = [INT, FLOAT, BOOL, STR]
+                elif arg_type == CHAR:
+                    valid_targets = [INT, CHAR, STR]
+                elif arg_type == STR:
+                    valid_targets = [CHAR, STR]
+                else:
+                    valid_targets = []
+
+                target_type = NotArrayType(target_type.value)
+                if target_type not in valid_targets:
+                    raise InvalidCastTargetError(
+                        self.program_str,
+                        meta,
+                        arg_type=str(arg_type),
+                        target_type=str(target_type),
+                    )
+
+                node.datatype = target_type
+                return node.datatype
             case _:
                 pass
 
@@ -876,13 +931,15 @@ class ProgramAnalyzer:
 if __name__ == "__main__":
     s = """
     record pair {x: float, y: float}
-    int arr[5] func(x: float, b: bool) {
+    int arr[5] func(x: float) {
         var a: int arr[7];
         return a;
     }
+    void f() {}
     main: {
-        var x: str arr[5];
-        let y = x[1];
+        var x: int arr[5];
+        var p: pair;
+        let i = cast(true, "pair");
     }
     """
     parser = Lark.open(
