@@ -1,73 +1,74 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from errors import (
-    InvalidIdentifierTypeError,
     NonExistentAttributeError,
     NonExistentNameError,
+    NonRecordFieldAccessError,
 )
 
 from .abstract_node_classes import Expr
 from .identifier import Identifier
-from .types import BASIC_TYPES, Type
+from .types import BASIC_TYPES
 
 
 @dataclass
 class FieldAccess(Expr):
     record_name: Identifier
-    attribute: Identifier
+    attributes: list[Identifier]
 
-    def build_var_tables(self) -> None:
+    def build_var_tables(self):
         assert self.scope is not None
-        record_name = str(self.record_name)
-        attribute = str(self.attribute)
-        meta = self.meta_info
 
-        # record name should be in scope
-        if not self.scope.var_name_in_scope(record_name):
+        # variable should be in scope
+        var_name = str(self.record_name)
+        if not self.scope.var_name_in_scope(var_name):
             raise NonExistentNameError(
-                meta,
-                identifier=record_name,
+                self.meta_info,
+                identifier=var_name,
                 expected_construct="variable/constant",
             )
 
-        # record name should be a record and not some other var
-        var_type = self.scope.get_type(record_name)
+    def check_types(self):
+        assert self.scope is not None
+        meta = self.meta_info
+        var_name = str(self.record_name)
+
+        # variable should be a record
+        var_type = self.scope.get_type(var_name)
         assert var_type is not None
         var_type_name = str(var_type)
         if not self.scope.type_in_scope(var_type_name) or var_type_name in BASIC_TYPES:
-            raise InvalidIdentifierTypeError(
-                meta,
-                var_name=record_name,
-                var_type=var_type_name,
-                expected_type="record",
-            )
+            raise NonRecordFieldAccessError(meta, var_name=var_name)
 
-        # check that the record has that attribute
-        type_dec = self.scope.get_type_dec(var_type_name)
-        assert type_dec is not None
-        if attribute not in [str(name) for name, _ in type_dec.field_list]:
-            raise NonExistentAttributeError(
-                meta,
-                record_name=record_name,
-                record_type_name=var_type_name,
-                attr=attribute,
-            )
+        # check that each attr is really an attribute of the previous one, and is itself a record (unless it is the last)
+        prev_type_dec = self.scope.get_type_dec(var_type_name)
+        attr_type = None
+        for i, attr in enumerate(self.attributes):
+            assert prev_type_dec is not None
+            attr = str(attr)
+            valid = False
 
-    def check_types(self) -> Optional[Type]:
-        assert self.scope is not None
+            # check that attr is in the field list of the prev record
+            for field_name, field_type in prev_type_dec.field_list:
+                if attr == str(field_name):
+                    valid = True
+                    attr_type = field_type
 
-        # get the type of the variable
-        var_type = self.scope.get_type(str(self.record_name))
-        assert var_type is not None
-        type_dec = self.scope.get_type_dec(str(var_type.name))
-        assert type_dec is not None
+            if not valid:
+                raise NonExistentAttributeError(
+                    meta,
+                    record_type_name=str(prev_type_dec.name),
+                    attr=attr,
+                )
+            assert attr_type is not None
 
-        # return the type of the attribute being referenced
-        for field_name, field_type in type_dec.field_list:
-            if str(field_name) == str(self.attribute):
-                self.datatype = field_type
-                return field_type
-        return None
+            # set new type dec
+            prev_type_dec = self.scope.get_type_dec(str(attr_type.name))
+            # only last attr can have basic type
+            if prev_type_dec is None and (i + 1) < len(self.attributes):
+                raise NonRecordFieldAccessError(meta, var_name=attr)
+
+        self.datatype = attr_type
+        return self.datatype

@@ -135,7 +135,7 @@ scan_stmt: SCAN "(" lvalue ")" ";"
         | STRVAL
 
 arr_access: IDENTIFIER "[" exprs "]"
-field_access: IDENTIFIER "." IDENTIFIER
+field_access: IDENTIFIER ( "." IDENTIFIER )+
 
 invocation: IDENTIFIER "(" [exprs] ")"
 exprs: expr ("," expr)*

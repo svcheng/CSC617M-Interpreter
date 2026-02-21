@@ -24,17 +24,15 @@ def analysis(ast: Program):
 
 if __name__ == "__main__":
     s = """
-        record pair {x: int, y: float}
-        void do_nothing() {return;}
-        int func(a: int) {
-            return 4;
-        }
-
+        record C {x: float}
+        record B {c: C}
+        record A {b: B}
         main: {
-            var x = 5;
-            do_nothing();
-            let m = func(x);
-            print(m);
+            var aa: A;
+            let y = aa.b.c.x;
+
+            var z: float;
+            z = y;
         }
     """
     parser = Lark.open(

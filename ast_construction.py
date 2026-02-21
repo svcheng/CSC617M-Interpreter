@@ -323,13 +323,14 @@ class ASTConstructor(Transformer):
         )
 
     def field_access(self, meta, children):
-        recordname, attribute = children
+        record_name = children[0]
+        attributes = children[1:]
         return FieldAccess(
             scope=None,
             meta_info=MetaInfo.from_meta(meta, self.program_str),
             datatype=None,
-            record_name=recordname,
-            attribute=attribute,
+            record_name=record_name,
+            attributes=attributes,
         )
 
     exprs = return_children
@@ -411,12 +412,15 @@ if __name__ == "__main__":
         "grammar.lark", start="program", parser="lalr", propagate_positions=True
     )
     s = """
+    record C {x: int}
+    record B {c: C}
+    record A {b: B}
     main: {
-        let x = cast(x, "int");
+        let y = a.b;
     }
     """
 
     parse_tree = parser.parse(s)
     print(parse_tree.pretty())
-    ast = ASTConstructor().transform(parse_tree)
-    print(ast.main_block[0].value)
+    ast = ASTConstructor(s).transform(parse_tree)
+    print(ast.main_block[0].value.attribute)
