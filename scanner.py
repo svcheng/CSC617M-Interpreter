@@ -1,8 +1,9 @@
-from lark import Lark
-from lark.exceptions import UnexpectedInput
 import argparse
 import time
 from pathlib import Path
+
+from lark import Lark
+from lark.exceptions import UnexpectedInput
 
 GRAMMAR_PATH = Path(__file__).with_name("grammar.lark")
 
@@ -34,17 +35,21 @@ CLASS_MAP = {
     "VOID": "Keyword",
     "PRINT": "Keyword",
     "SCAN": "Keyword",
+    "CAST": "Keyword",
     # errors
     "INVALID_IDENT": "Invalid Identifier",
 }
 
+
 def classify(tok):
     return CLASS_MAP.get(tok.type, tok.type)
+
 
 def build_lexer(grammar_path=GRAMMAR_PATH):
     text = grammar_path.read_text(encoding="utf-8")
     # create a Lark instance in lexer-only mode (no parser)
     return Lark(text, parser=None, lexer="basic")
+
 
 def scan_text(text, lexer, output_file=None):
     start = time.time()
@@ -59,9 +64,13 @@ def scan_text(text, lexer, output_file=None):
             line = getattr(tok, "line", "?")
             col = getattr(tok, "column", "?")
             if label == "UNKNOWN" or tok.type == "UNKNOWN":
-                out_lines.append(f"Error found in line {line} column {col}: Unknown symbol '{tok.value}'")
+                out_lines.append(
+                    f"Error found in line {line} column {col}: Unknown symbol '{tok.value}'"
+                )
             else:
-                out_lines.append(f'{label} Token "{tok.value}" found in line {line} column {col}')
+                out_lines.append(
+                    f'{label} Token "{tok.value}" found in line {line} column {col}'
+                )
     except UnexpectedInput as e:
         out_lines.append(f"Lexer error: {e}")
     elapsed = time.time() - start
@@ -73,6 +82,7 @@ def scan_text(text, lexer, output_file=None):
     else:
         print("\n".join(out_lines))
 
+
 def main():
     parser = argparse.ArgumentParser(description="Scanner using grammar.lark")
     parser.add_argument("filename", help="Source file to scan")
@@ -82,6 +92,7 @@ def main():
     lexer = build_lexer()
     src = Path(args.filename).read_text(encoding="utf-8")
     scan_text(src, lexer, args.output)
+
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,6 @@
 from typing import Optional
 
-from ast_construction import MetaInfo
-from ast_definition import Type
+from abstract_syntax_tree.aux_classes import MetaInfo
 
 
 class CustomError(Exception):
@@ -9,13 +8,11 @@ class CustomError(Exception):
         self,
         msg_prefix: str,
         error_msg: str,
-        program_str: str,
         meta_info: MetaInfo,
         show_code_block: bool = True,
     ):
         self.msg_prefix = msg_prefix
         self.error_msg = error_msg
-        self.program_str = program_str
         self.meta_info = meta_info
         self.show_code_block = show_code_block
         final_error_msg = self.format_error_msg()
@@ -23,7 +20,7 @@ class CustomError(Exception):
 
     def format_error_msg(self):
         start_idx, end_idx = self.meta_info.start_pos, self.meta_info.end_pos
-        program_segment = self.program_str[start_idx:end_idx]
+        program_segment = self.meta_info.program_str[start_idx:end_idx]
 
         if self.meta_info.start_line != self.meta_info.end_line:
             line_num = f"lines {self.meta_info.start_line}-{self.meta_info.end_line}:"
@@ -40,7 +37,6 @@ class CustomError(Exception):
 class Warning(CustomError):
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         error_msg: str,
         show_code_block: bool = True,
@@ -49,7 +45,6 @@ class Warning(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
             show_code_block=show_code_block,
         )
@@ -58,13 +53,12 @@ class Warning(CustomError):
 class KeywordCollisionError(CustomError):
     error_name = "KEYWORD-COLLISION ERROR"
 
-    def __init__(self, program_str: str, meta_info: MetaInfo, identifier: str):
+    def __init__(self, meta_info: MetaInfo, identifier: str):
         msg_prefix = self.error_name + " found in "
         error_msg = f'"{identifier}" is a reserved word and cannot be an identifier'
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -74,7 +68,6 @@ class NameCollisionError(CustomError):
 
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         identifier: str,
         alr_existing_construct: str,
@@ -86,7 +79,6 @@ class NameCollisionError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -95,12 +87,11 @@ class RecursiveTypeDefinitionError(CustomError):
     error_name = "RECURSIVE-TYPE-DEFINITION ERROR"
     error_msg = "Recursive definition of custom type"
 
-    def __init__(self, program_str: str, meta_info: MetaInfo):
+    def __init__(self, meta_info: MetaInfo):
         msg_prefix = self.error_name + " found in type declaration, "
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=self.error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -109,12 +100,11 @@ class InvalidAttributeNameError(CustomError):
     error_name = "INVALID-ATTRIBUTE-NAME ERROR"
     error_msg = "Name of custom type and its attributes must be distinct"
 
-    def __init__(self, program_str: str, meta_info: MetaInfo):
+    def __init__(self, meta_info: MetaInfo):
         msg_prefix = self.error_name + " found in type declaration, "
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=self.error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -124,7 +114,6 @@ class NonExistentAttributeError(CustomError):
 
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         record_name: str,
         record_type_name: str,
@@ -135,7 +124,6 @@ class NonExistentAttributeError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
             show_code_block=False,
         )
@@ -146,7 +134,6 @@ class NonExistentNameError(CustomError):
 
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         identifier: str,
         expected_construct: str,
@@ -156,7 +143,6 @@ class NonExistentNameError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
             show_code_block="variable" not in expected_construct,
         )
@@ -165,13 +151,12 @@ class NonExistentNameError(CustomError):
 class InvalidBaseTypeError(CustomError):
     error_name = "INVALID-BASE-TYPE ERROR"
 
-    def __init__(self, program_str: str, meta_info: MetaInfo, base_type_name: str):
+    def __init__(self, meta_info: MetaInfo, base_type_name: str):
         msg_prefix = self.error_name + " found in "
         error_msg = f'"{base_type_name}" is not a valid base type'
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -181,7 +166,6 @@ class InvalidIdentifierTypeError(CustomError):
 
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         var_name: str,
         var_type: str,
@@ -192,7 +176,6 @@ class InvalidIdentifierTypeError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -200,9 +183,7 @@ class InvalidIdentifierTypeError(CustomError):
 class InvalidIndexTypeError(CustomError):
     error_name = "INVALID-INDEX-TYPE Error"
 
-    def __init__(
-        self, program_str: str, meta_info: MetaInfo, order: int, wrong_type: str
-    ):
+    def __init__(self, meta_info: MetaInfo, order: int, wrong_type: str):
         msg_prefix = self.error_name + " found in "
         match order:
             case 1:
@@ -220,7 +201,6 @@ class InvalidIndexTypeError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -230,7 +210,6 @@ class IncorrectIndexDimensionError(CustomError):
 
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         arr_name: str,
         expected_dim: int,
@@ -241,7 +220,6 @@ class IncorrectIndexDimensionError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -250,12 +228,11 @@ class MisplacedReturnError(CustomError):
     error_name = "MISPLACED-RETURN ERROR"
     error_msg = "Return statement outside of function declaration"
 
-    def __init__(self, program_str: str, meta_info: MetaInfo):
+    def __init__(self, meta_info: MetaInfo):
         msg_prefix = self.error_name + " found in "
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=self.error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -265,7 +242,6 @@ class ReturnValueExistenceError(CustomError):
 
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         func_name: str,
         is_void: bool,
@@ -280,7 +256,6 @@ class ReturnValueExistenceError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
             show_code_block=show_code_block,
         )
@@ -291,7 +266,6 @@ class IncorrectParameterCountError(CustomError):
 
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         func_invoked: str,
         actual_count: int,
@@ -302,7 +276,6 @@ class IncorrectParameterCountError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -311,12 +284,11 @@ class ConstantReassignmentError(CustomError):
     error_name = "CONSTANT-RE-ASSIGNMENT ERROR"
     error_msg = "Constants cannot be re-assigned"
 
-    def __init__(self, program_str: str, meta_info: MetaInfo):
+    def __init__(self, meta_info: MetaInfo):
         msg_prefix = self.error_name + " found in "
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=self.error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -324,9 +296,7 @@ class ConstantReassignmentError(CustomError):
 class OperatorTypeError(CustomError):
     error_name = "OPERATOR-TYPE ERROR"
 
-    def __init__(
-        self, program_str: str, meta_info: MetaInfo, op: str, type_names: list[str]
-    ):
+    def __init__(self, meta_info: MetaInfo, op: str, type_names: list[str]):
         msg_prefix = self.error_name + " found in "
 
         if len(type_names) == 1:
@@ -340,7 +310,6 @@ class OperatorTypeError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -349,13 +318,12 @@ class VoidExpressionError(CustomError):
     error_name = "VOID-EXPRESSION ERROR"
     error_msg = "Void function cannot be invoked where a value is expected"
 
-    def __init__(self, program_str: str, meta_info: MetaInfo):
+    def __init__(self, meta_info: MetaInfo):
         msg_prefix = self.error_name + " found in "
 
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=self.error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -365,7 +333,6 @@ class IncorrectParameterTypeError(CustomError):
 
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         func_name: str,
         arg_name: Optional[str],
@@ -380,7 +347,6 @@ class IncorrectParameterTypeError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -388,13 +354,12 @@ class IncorrectParameterTypeError(CustomError):
 class TypeMismatchError(CustomError):
     error_name = "TYPE-MISMATCH ERROR"
 
-    def __init__(self, program_str: str, meta_info: MetaInfo, ltype: str, rtype: str):
+    def __init__(self, meta_info: MetaInfo, ltype: str, rtype: str):
         msg_prefix = self.error_name + " found in assignment, "
         error_msg = f'"{rtype}" given but "{ltype}" expected'
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -402,13 +367,12 @@ class TypeMismatchError(CustomError):
 class InvalidConditionError(CustomError):
     error_name = "INVALID-CONDITION ERROR"
 
-    def __init__(self, program_str: str, meta_info: MetaInfo, cond_type: str):
+    def __init__(self, meta_info: MetaInfo, cond_type: str):
         msg_prefix = self.error_name + " found in "
         error_msg = f'Conditions should be boolean but "{cond_type}" given'
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -416,15 +380,12 @@ class InvalidConditionError(CustomError):
 class MalformedForLoopError(CustomError):
     error_name = "MALFORMED-FOR-LOOP ERROR"
 
-    def __init__(
-        self, program_str: str, meta_info: MetaInfo, param_name: str, param_type: str
-    ):
+    def __init__(self, meta_info: MetaInfo, param_name: str, param_type: str):
         msg_prefix = self.error_name + " found in "
         error_msg = f'{param_name} should be integer but "{param_type}" was given'
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -433,13 +394,12 @@ class ImmutableScanTarget(CustomError):
     error_name = "INVALID-SCAN-TARGET ERROR"
     error_msg = 'Input to "scan" must not be a constant'
 
-    def __init__(self, program_str: str, meta_info: MetaInfo):
+    def __init__(self, meta_info: MetaInfo):
         msg_prefix = self.error_name + " found in "
 
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=self.error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -449,7 +409,6 @@ class InvalidReturnValueError(CustomError):
 
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         func_name: str,
         expected_type: str,
@@ -460,7 +419,6 @@ class InvalidReturnValueError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -470,7 +428,6 @@ class InvalidCastArgumentError(CustomError):
 
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         arg_type: str,
     ):
@@ -479,7 +436,6 @@ class InvalidCastArgumentError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
             meta_info=meta_info,
         )
 
@@ -489,7 +445,6 @@ class InvalidCastTargetError(CustomError):
 
     def __init__(
         self,
-        program_str: str,
         meta_info: MetaInfo,
         arg_type: str,
         target_type: str,
@@ -499,6 +454,22 @@ class InvalidCastTargetError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix,
             error_msg=error_msg,
-            program_str=program_str,
+            meta_info=meta_info,
+        )
+
+
+class NullReferenceError(CustomError):
+    error_name = "NULL-REFERENCE ERROR"
+
+    def __init__(
+        self,
+        meta_info: MetaInfo,
+        var_name: str,
+    ):
+        msg_prefix = self.error_name + " found in "
+        error_msg = f'"{var_name}" has not been assigned a value'
+        super().__init__(
+            msg_prefix=msg_prefix,
+            error_msg=error_msg,
             meta_info=meta_info,
         )

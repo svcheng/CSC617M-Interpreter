@@ -1,65 +1,70 @@
-from tkinter.constants import NONE
 from typing import Optional
 
 from lark import Lark, Transformer, v_args
 
-from ast_definition import (
+from abstract_syntax_tree.arr_access import ArrAccess
+from abstract_syntax_tree.assignment import Assignment
+from abstract_syntax_tree.aux_classes import MetaInfo
+from abstract_syntax_tree.bin_op import BinOp
+from abstract_syntax_tree.cast import Cast
+from abstract_syntax_tree.conditional import Conditional
+from abstract_syntax_tree.const_dec import ConstDec
+from abstract_syntax_tree.field_access import FieldAccess
+from abstract_syntax_tree.for_loop import ForLoop
+from abstract_syntax_tree.func_dec import FuncDec
+from abstract_syntax_tree.identifier import Identifier
+from abstract_syntax_tree.invocation import Invocation
+from abstract_syntax_tree.literal import Literal
+from abstract_syntax_tree.print_stmt import PrintStmt
+from abstract_syntax_tree.program import Program
+from abstract_syntax_tree.repeat_loop import RepeatLoop
+from abstract_syntax_tree.return_stmt import ReturnStmt
+from abstract_syntax_tree.scan_stmt import ScanStmt
+from abstract_syntax_tree.type_dec import TypeDec
+from abstract_syntax_tree.types import (
     BOOL,
     CHAR,
     FLOAT,
     INT,
     STR,
-    ArrAccess,
     ArrayType,
-    Assignment,
-    BinOp,
-    Cast,
-    Conditional,
-    ConstDec,
-    FieldAccess,
-    ForLoop,
-    FuncDec,
-    Identifier,
-    Invocation,
-    Literal,
-    MetaInfo,
     NotArrayType,
-    PrintStmt,
-    Program,
-    RepeatLoop,
-    ReturnStmt,
-    ScanStmt,
     Type,
-    TypeDec,
-    UnaryOp,
-    VarDec,
-    WhileLoop,
 )
-
-
-def new_bin_op(meta, children, datatype: Optional[Type], op: str):
-    left, right = children
-    return BinOp(
-        scope=None,
-        meta_info=MetaInfo.from_meta(meta),
-        datatype=datatype,
-        op=op,
-        left=left,
-        right=right,
-    )
-
-
-def new_bool_op(meta, children, op: str):
-    return new_bin_op(meta=meta, children=children, datatype=BOOL, op=op)
+from abstract_syntax_tree.unary_op import UnaryOp
+from abstract_syntax_tree.var_dec import VarDec
+from abstract_syntax_tree.while_loop import WhileLoop
 
 
 @v_args(meta=True)
 class ASTConstructor(Transformer):
+    def __init__(self, program_str: str):
+        super().__init__()
+        self.program_str = program_str
+
+    # =====================
+    # Helper Methods
+    # =====================
+
     def return_fst(self, _, children):
         return children[0]
 
     def return_children(self, _, children):
         return children
+
+    def new_bin_op(self, meta, children, datatype: Optional[Type], op: str):
+        left, right = children
+        return BinOp(
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
+            datatype=datatype,
+            op=op,
+            left=left,
+            right=right,
+        )
+
+    def new_bool_op(self, meta, children, op: str):
+        return self.new_bin_op(meta=meta, children=children, datatype=BOOL, op=op)
 
     # =====================
     # Terminals
@@ -68,7 +73,7 @@ class ASTConstructor(Transformer):
     def IDENTIFIER(self, token):
         return Identifier(
             scope=None,
-            meta_info=MetaInfo.from_token(token),
+            meta_info=MetaInfo.from_token(token, self.program_str),
             name=token.value,
         )
 
@@ -76,7 +81,7 @@ class ASTConstructor(Transformer):
         raw_value = token.value
         return Literal(
             scope=None,
-            meta_info=MetaInfo.from_token(token),
+            meta_info=MetaInfo.from_token(token, self.program_str),
             datatype=INT,
             value=int(raw_value),
         )
@@ -85,7 +90,7 @@ class ASTConstructor(Transformer):
         raw_value = token.value
         return Literal(
             scope=None,
-            meta_info=MetaInfo.from_token(token),
+            meta_info=MetaInfo.from_token(token, self.program_str),
             datatype=FLOAT,
             value=float(raw_value),
         )
@@ -94,7 +99,7 @@ class ASTConstructor(Transformer):
         raw_value = token.value
         return Literal(
             scope=None,
-            meta_info=MetaInfo.from_token(token),
+            meta_info=MetaInfo.from_token(token, self.program_str),
             datatype=BOOL,
             value=raw_value == "true",
         )
@@ -103,7 +108,7 @@ class ASTConstructor(Transformer):
         raw_value = token.value
         return Literal(
             scope=None,
-            meta_info=MetaInfo.from_token(token),
+            meta_info=MetaInfo.from_token(token, self.program_str),
             datatype=CHAR,
             value=raw_value[1:-1],
         )
@@ -112,7 +117,7 @@ class ASTConstructor(Transformer):
         raw_value = token.value
         return Literal(
             scope=None,
-            meta_info=MetaInfo.from_token(token),
+            meta_info=MetaInfo.from_token(token, self.program_str),
             datatype=STR,
             value=raw_value[1:-1],
         )
@@ -125,7 +130,7 @@ class ASTConstructor(Transformer):
         type_decs, func_decs, main_block = children
         return Program(
             scope=None,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             type_decs=type_decs,
             func_decs=func_decs,
             main_block=main_block,
@@ -147,14 +152,17 @@ class ASTConstructor(Transformer):
     def const_dec(self, meta, children):
         _, name, value = children
         return ConstDec(
-            scope=None, meta_info=MetaInfo.from_meta(meta), name=name, value=value
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
+            name=name,
+            value=value,
         )
 
     def var_dec_no_assign(self, meta, children):
         _, name, declared_type = children
         return VarDec(
             scope=None,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             name=name,
             declared_type=declared_type,
             init_value=None,
@@ -164,7 +172,7 @@ class ASTConstructor(Transformer):
         _, name, init_value = children
         return VarDec(
             scope=None,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             name=name,
             declared_type=None,
             init_value=init_value,
@@ -176,7 +184,7 @@ class ASTConstructor(Transformer):
         return TypeDec(
             scope=None,
             name=name,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             field_list=field_list,
         )
 
@@ -194,7 +202,7 @@ class ASTConstructor(Transformer):
             body = []
         return FuncDec(
             scope=None,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             name=name,
             args=args,
             return_type=return_type,
@@ -230,7 +238,10 @@ class ASTConstructor(Transformer):
     def assignment(self, meta, children):
         lval, rval = children
         return Assignment(
-            scope=None, meta_info=MetaInfo.from_meta(meta), lval=lval, rval=rval
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
+            lval=lval,
+            rval=rval,
         )
 
     def conditional(self, meta, children):
@@ -239,7 +250,7 @@ class ASTConstructor(Transformer):
         else_block = children[4] if len(children) > 3 else None
         return Conditional(
             scope=None,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             condition=condition,
             then_block=then_block,
             else_block=else_block,
@@ -249,7 +260,7 @@ class ASTConstructor(Transformer):
         _, iterator_name, range_start, range_end, step, body = children
         return ForLoop(
             scope=None,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             iterator_name=iterator_name,
             range_start=range_start,
             range_end=range_end,
@@ -260,26 +271,42 @@ class ASTConstructor(Transformer):
     def while_loop(self, meta, children):
         _, cond, body = children
         return WhileLoop(
-            scope=None, meta_info=MetaInfo.from_meta(meta), cond=cond, body=body
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
+            cond=cond,
+            body=body,
         )
 
     def repeat_loop(self, meta, children):
         _, body, _, cond = children
         return RepeatLoop(
-            scope=None, meta_info=MetaInfo.from_meta(meta), cond=cond, body=body
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
+            cond=cond,
+            body=body,
         )
 
     def return_stmt(self, meta, children):
         value = children[1] if len(children) > 1 else None
-        return ReturnStmt(scope=None, meta_info=MetaInfo.from_meta(meta), value=value)
+        return ReturnStmt(
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
+            value=value,
+        )
 
     def print_stmt(self, meta, children):
         value = children[1]
-        return PrintStmt(scope=None, meta_info=MetaInfo.from_meta(meta), value=value)
+        return PrintStmt(
+            scope=None,
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
+            value=value,
+        )
 
     def scan_stmt(self, meta, children):
         lval = children[1]
-        return ScanStmt(scope=None, meta_info=MetaInfo.from_meta(meta), lval=lval)
+        return ScanStmt(
+            scope=None, meta_info=MetaInfo.from_meta(meta, self.program_str), lval=lval
+        )
 
     # =====================
     # Expressions: Scalars
@@ -289,7 +316,7 @@ class ASTConstructor(Transformer):
         array_name, indices = children
         return ArrAccess(
             scope=None,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             datatype=None,
             array_name=array_name,
             indices=indices,
@@ -299,7 +326,7 @@ class ASTConstructor(Transformer):
         recordname, attribute = children
         return FieldAccess(
             scope=None,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             datatype=None,
             record_name=recordname,
             attribute=attribute,
@@ -312,7 +339,7 @@ class ASTConstructor(Transformer):
         args = children[1] if children[1] is not None else []
         return Invocation(
             scope=None,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             datatype=None,
             name=name,
             args=args,
@@ -322,7 +349,7 @@ class ASTConstructor(Transformer):
         _, arg, target_type = children
         return Cast(
             scope=None,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             datatype=None,
             arg=arg,
             target_type=target_type,
@@ -333,45 +360,45 @@ class ASTConstructor(Transformer):
     # =====================
 
     def add(self, meta, children):
-        return new_bin_op(meta=meta, children=children, datatype=None, op="+")
+        return self.new_bin_op(meta=meta, children=children, datatype=None, op="+")
 
     def sub(self, meta, children):
-        return new_bin_op(meta=meta, children=children, datatype=None, op="-")
+        return self.new_bin_op(meta=meta, children=children, datatype=None, op="-")
 
     def mul(self, meta, children):
-        return new_bin_op(meta=meta, children=children, datatype=None, op="*")
+        return self.new_bin_op(meta=meta, children=children, datatype=None, op="*")
 
     def div(self, meta, children):
-        return new_bin_op(meta=meta, children=children, datatype=None, op="/")
+        return self.new_bin_op(meta=meta, children=children, datatype=None, op="/")
 
     def eq(self, meta, children):
-        return new_bool_op(meta, children, op="==")
+        return self.new_bool_op(meta, children, op="==")
 
     def ne(self, meta, children):
-        return new_bool_op(meta, children, op="!=")
+        return self.new_bool_op(meta, children, op="!=")
 
     def lt(self, meta, children):
-        return new_bool_op(meta, children, op="<")
+        return self.new_bool_op(meta, children, op="<")
 
     def le(self, meta, children):
-        return new_bool_op(meta, children, op="<=")
+        return self.new_bool_op(meta, children, op="<=")
 
     def gt(self, meta, children):
-        return new_bool_op(meta, children, op=">")
+        return self.new_bool_op(meta, children, op=">")
 
     def ge(self, meta, children):
-        return new_bool_op(meta, children, op=">=")
+        return self.new_bool_op(meta, children, op=">=")
 
     def lor(self, meta, children):
-        return new_bool_op(meta, children, op="||")
+        return self.new_bool_op(meta, children, op="||")
 
     def land(self, meta, children):
-        return new_bool_op(meta, children, op="&&")
+        return self.new_bool_op(meta, children, op="&&")
 
     def lnot(self, meta, children):
         return UnaryOp(
             scope=None,
-            meta_info=MetaInfo.from_meta(meta),
+            meta_info=MetaInfo.from_meta(meta, self.program_str),
             datatype=None,
             op="!",
             arg=children[0],
