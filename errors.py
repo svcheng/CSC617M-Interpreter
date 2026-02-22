@@ -256,6 +256,18 @@ class ConstantReassignmentError(CustomError):
         )
 
 
+class MutableConstantError(CustomError):
+    error_name = "MUTABLE-CONSTANT ERROR"
+
+    def __init__(self, meta_info: MetaInfo, type_name: str):
+        msg_prefix = self.error_name + " found in constant declaration, "
+        error_msg = f'Constant cannot be initialized with mutable type "{type_name}"'
+
+        super().__init__(
+            msg_prefix=msg_prefix, error_msg=error_msg, meta_info=meta_info
+        )
+
+
 class OperatorTypeError(CustomError):
     error_name = "OPERATOR-TYPE ERROR"
 
@@ -302,7 +314,7 @@ class IncorrectParameterTypeError(CustomError):
         if arg_name is not None:
             error_msg = f'"{func_name}" expects parameter of type "{arg_type}" to be passed to "{arg_name}" but "{param_type} was received'
         else:
-            error_msg = f'"{func_name}" expects parameter of type "{arg_type}" to be passed but "{param_type} was received'
+            error_msg = f'"{func_name}" expects parameter of type "{arg_type}" to be passed but "{param_type}" was received'
         super().__init__(
             msg_prefix=msg_prefix, error_msg=error_msg, meta_info=meta_info
         )

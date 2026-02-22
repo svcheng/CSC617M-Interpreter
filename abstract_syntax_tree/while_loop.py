@@ -48,3 +48,8 @@ class WhileLoop(Node):
             return_stmts.extend(stmt._find_returns())
 
         return return_stmts
+
+    def check_null_references(self):
+        self.cond.check_null_references()
+        for stmt in self.body:
+            stmt.check_null_references()

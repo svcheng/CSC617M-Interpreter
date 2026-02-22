@@ -25,6 +25,7 @@ class Scope:
     var_table: dict[str, VarInfo]
     type_table: dict[str, Optional[TypeDec]]
     func_table: dict[str, FuncDec]
+    initialized_table: set[str]
 
     def __init__(self, parent_scope: Optional[Self]):
         self.parent_scope = parent_scope
@@ -35,6 +36,12 @@ class Scope:
         else:
             self.type_table = dict()
             self.func_table = dict()
+
+        self.initialized_table = set()
+
+    ####################################
+    # Scope checking methods
+    ####################################
 
     def var_name_in_scope(self, var_name: str) -> bool:
         if var_name in self.var_table:
@@ -49,14 +56,15 @@ class Scope:
     def function_in_scope(self, func_name: str) -> bool:
         return func_name in self.func_table
 
+    ####################################
+    # Getters
+    ####################################
+
     def get_type_dec(self, type_name: str) -> Optional[TypeDec]:
         return self.type_table[type_name]
 
     def get_func_dec(self, func_name: str) -> FuncDec:
         return self.func_table[func_name]
-
-    def insert_varname(self, var_name: str, var_info: VarInfo) -> None:
-        self.var_table[var_name] = var_info
 
     def get_var_info(self, var_name: str) -> Optional[VarInfo]:
         if var_name in self.var_table:
@@ -73,11 +81,28 @@ class Scope:
         var_info = self.get_var_info(var_name)
         return var_info.datatype if var_info is not None else None
 
-    # Assumes var_name is already in scope.
+    ########################
+    # Setters
+    #######################
+
+    def insert_varname(self, var_name: str, var_info: VarInfo) -> None:
+        self.var_table[var_name] = var_info
+
+    # Assumes var_name is already in scope
     def set_type(self, var_name: str, datatype: Type) -> None:
         cur_info = self.get_var_info(var_name)
         assert cur_info is not None
         self.var_table[var_name] = VarInfo(cur_info.is_constant, datatype)
+
+    ########################
+    # Init table methods
+    #######################
+
+    def is_initialized(self, var_name: str) -> bool:
+        return var_name in self.initialized_table
+
+    def initialize(self, var_name: str) -> None:
+        self.initialized_table.add(var_name)
 
 
 @dataclass

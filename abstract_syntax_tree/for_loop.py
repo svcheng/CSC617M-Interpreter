@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from errors import MalformedForLoopError, VoidExpressionError
 
 from .abstract_node_classes import Expr, Node
 from .aux_classes import Scope, VarInfo
 from .identifier import Identifier
-from .types import INT, Type
+from .types import INT
 
 
 @dataclass
@@ -70,3 +69,10 @@ class ForLoop(Node):
         for stmt in self.body:
             return_stmts.extend(stmt._find_returns())
         return return_stmts
+
+    def check_null_references(self):
+        self.range_start.check_null_references()
+        self.range_end.check_null_references()
+        self.step.check_null_references()
+        for stmt in self.body:
+            stmt.check_null_references()

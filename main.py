@@ -15,6 +15,7 @@ def analysis(ast: Program):
         ast.build_var_tables()
         ast.check_types()
         ast.check_returns()
+        ast.check_null_references()
     except CustomError as e:
         print("Compilation failed with the following error:")
         print(e)
@@ -24,15 +25,10 @@ def analysis(ast: Program):
 
 if __name__ == "__main__":
     s = """
-        record C {x: float}
-        record B {c: C}
-        record A {b: B}
+        record pair {x: float, y: float}
         main: {
-            var aa: A;
-            let y = aa.b.c.x;
-
-            var z: float;
-            z = y;
+        var x = 5;
+        let y = x;
         }
     """
     parser = Lark.open(

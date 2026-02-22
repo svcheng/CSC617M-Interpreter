@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from abstract_syntax_tree.identifier import Identifier
 from errors import ConstantReassignmentError, TypeMismatchError, VoidExpressionError
 
 from .abstract_node_classes import Expr, Node
@@ -18,7 +19,7 @@ class Assignment(Node):
         self.lval.init_scope(scope)
         self.rval.init_scope(scope)
 
-    def build_var_tables(self) -> None:
+    def build_var_tables(self):
         self.lval.build_var_tables()
         self.rval.build_var_tables()
 
@@ -27,7 +28,7 @@ class Assignment(Node):
         if self.scope.var_is_constant(str(self.lval)):
             raise ConstantReassignmentError(self.meta_info)
 
-    def check_types(self) -> None:
+    def check_types(self):
         left_type = self.lval.check_types()
         assert left_type is not None
 
@@ -41,3 +42,10 @@ class Assignment(Node):
                 str(left_type.name),
                 str(right_type.name),
             )
+
+    def check_null_references(self):
+        self.rval.check_null_references()
+
+        assert self.scope is not None
+        if isinstance(self.lval, Identifier):
+            self.scope.initialize(str(self.lval))

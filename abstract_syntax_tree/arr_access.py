@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from errors import (
     IncorrectIndexDimensionError,
@@ -13,7 +12,7 @@ from errors import (
 from .abstract_node_classes import Expr
 from .aux_classes import Scope
 from .identifier import Identifier
-from .types import CHAR, INT, STR, ArrayType, Type
+from .types import CHAR, INT, STR, ArrayType
 
 
 @dataclass
@@ -27,12 +26,12 @@ class ArrAccess(Expr):
         for idx in self.indices:
             idx.init_scope(scope)
 
-    def build_var_tables(self) -> None:
+    def build_var_tables(self):
         self.array_name.build_var_tables()
         for idx in self.indices:
             idx.build_var_tables()
 
-    def check_types(self) -> Optional[Type]:
+    def check_types(self):
         assert self.scope is not None
         arr_name = str(self.array_name)
         meta = self.meta_info
@@ -78,3 +77,7 @@ class ArrAccess(Expr):
                 var_type=str(var_type),
                 expected_type="arr or str",
             )
+
+    def check_null_references(self):
+        for idx in self.indices:
+            idx.check_null_references()

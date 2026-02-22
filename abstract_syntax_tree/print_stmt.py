@@ -13,13 +13,16 @@ class PrintStmt(Node):
         self.scope = scope
         self.value.init_scope(scope)
 
-    def build_var_tables(self) -> None:
+    def build_var_tables(self):
         self.value.build_var_tables()
 
-    def check_types(self) -> None:
+    def check_types(self):
         from errors import VoidExpressionError
 
         assert self.scope is not None
         value_type = self.value.check_types()
         if value_type is None:
             raise VoidExpressionError(self.meta_info)
+
+    def check_null_references(self):
+        self.value.check_null_references()

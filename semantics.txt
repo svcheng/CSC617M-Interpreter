@@ -1,4 +1,4 @@
-Syntax rules (besides grammar rules) (all done)
+Syntax rules (besides grammar rules)
 - records should not be defined recursively
 - functions
     - functions should be passed the correct number of parameters
@@ -10,7 +10,7 @@ Syntax rules (besides grammar rules) (all done)
     - identifiers should not be reused (within a scope)
     - identifiers should not be referenced before they are declared
 
-Compile-time Semantics (all done)
+Compile-time Semantics
 - constants cannot be re-assigned
 - constants cannot be records and arrays (these are mutable)
 - scoping rule
@@ -23,11 +23,13 @@ Compile-time Semantics (all done)
     - type casting in arithmetic ops between numbers (int to float)
     - type inference for constant/variable declaration (e.g. var x = 5+1; <- compiler should know x is integer)
     - array indices and sizes must be integers
+- "null" references (except for array access (except for the indices))
 
 Run-time Semantics
 - to determine value of variable when its name is bound to more than 1 variable, choose the one in the innermost scope
 - everything is pass by value except records and arrays
-- array access bounds checking
-- default values (instead of NULL, like in C)
+- array accesa bounds checking
+- NULL reference - array and field access
 - auto type casting in arithmetic ops
-- type checking for array variable assignment (assigning variable of type array to another variable of type array) and returning arrays (exact size of array can only be known at runtime)
+- type checking for array variable assignment (assigning array to another array) and returning arrays (sizes must be the same, exact size of array can only be known at runtime)
+- validity of for loop parameters

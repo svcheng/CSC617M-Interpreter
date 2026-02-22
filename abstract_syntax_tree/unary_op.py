@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from errors import OperatorTypeError, VoidExpressionError
 
 from .abstract_node_classes import Expr
 from .aux_classes import Scope
-from .types import BOOL, Type
+from .types import BOOL
 
 
 @dataclass
@@ -19,10 +18,10 @@ class UnaryOp(Expr):
         self.scope = scope
         self.arg.init_scope(scope)
 
-    def build_var_tables(self) -> None:
+    def build_var_tables(self):
         self.arg.build_var_tables()
 
-    def check_types(self) -> Optional[Type]:
+    def check_types(self):
         arg_type = self.arg.check_types()
         if arg_type is None:
             raise VoidExpressionError(self.meta_info)
@@ -35,3 +34,6 @@ class UnaryOp(Expr):
 
         self.datatype = arg_type
         return arg_type
+
+    def check_null_references(self):
+        self.arg.check_null_references()

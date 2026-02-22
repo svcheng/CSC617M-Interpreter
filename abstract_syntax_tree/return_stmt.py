@@ -18,7 +18,7 @@ class ReturnStmt(Node):
         if self.value is not None:
             self.value.init_scope(scope)
 
-    def check_misplaced_returns(self) -> None:
+    def check_misplaced_returns(self):
         raise MisplacedReturnError(self.meta_info)
 
     def build_var_tables(self) -> None:
@@ -27,3 +27,7 @@ class ReturnStmt(Node):
 
     def _find_returns(self):
         return [self]
+
+    def check_null_references(self):
+        if self.value is not None:
+            self.value.check_null_references()

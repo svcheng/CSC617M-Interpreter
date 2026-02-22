@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from errors import InvalidConditionError, VoidExpressionError
 
 from .abstract_node_classes import Expr, Node
 from .aux_classes import Scope
-from .types import BOOL, Type
+from .types import BOOL
 
 
 @dataclass
@@ -48,3 +47,8 @@ class RepeatLoop(Node):
             return_stmts.extend(stmt._find_returns())
 
         return return_stmts
+
+    def check_null_references(self):
+        self.cond.check_null_references()
+        for stmt in self.body:
+            stmt.check_null_references()

@@ -55,3 +55,10 @@ class Program(Node):
             func_dec.check_types()
         for stmt in self.main_block:
             stmt.check_types()
+
+    def check_null_references(self):
+        for func_dec in self.func_decs:
+            func_dec.check_null_references()
+
+        for stmt in self.main_block:
+            stmt.check_null_references()

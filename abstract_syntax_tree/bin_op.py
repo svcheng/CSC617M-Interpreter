@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from .abstract_node_classes import Expr
 from .aux_classes import Scope
-from .types import BOOL, FLOAT, INT, STR, Type
+from .types import BOOL, FLOAT, INT, STR
 
 
 @dataclass
@@ -19,11 +18,11 @@ class BinOp(Expr):
         self.left.init_scope(scope)
         self.right.init_scope(scope)
 
-    def build_var_tables(self) -> None:
+    def build_var_tables(self):
         self.left.build_var_tables()
         self.right.build_var_tables()
 
-    def check_types(self) -> Optional[Type]:
+    def check_types(self):
         from errors import OperatorTypeError, VoidExpressionError
 
         numerical_types = (INT, FLOAT)
@@ -71,3 +70,7 @@ class BinOp(Expr):
                 self.datatype = BOOL
 
         return self.datatype
+
+    def check_null_references(self):
+        self.left.check_null_references()
+        self.right.check_null_references()

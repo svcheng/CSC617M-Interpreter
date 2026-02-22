@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
+from abstract_syntax_tree.aux_classes import Scope
 from errors import (
     IncorrectParameterCountError,
     IncorrectParameterTypeError,
@@ -12,7 +12,6 @@ from errors import (
 
 from .abstract_node_classes import Expr
 from .identifier import Identifier
-from .types import Type
 
 
 @dataclass
@@ -20,12 +19,12 @@ class Invocation(Expr):
     name: Identifier
     args: list[Expr]
 
-    def init_scope(self, scope):
+    def init_scope(self, scope: Scope):
         self.scope = scope
         for arg in self.args:
             arg.init_scope(scope)
 
-    def build_var_tables(self) -> None:
+    def build_var_tables(self):
         assert self.scope is not None
         name = str(self.name)
         meta = self.meta_info
@@ -52,7 +51,7 @@ class Invocation(Expr):
         for arg in self.args:
             arg.build_var_tables()
 
-    def check_types(self) -> Optional[Type]:
+    def check_types(self):
         assert self.scope is not None
 
         func_dec = self.scope.get_func_dec(str(self.name))
@@ -78,3 +77,7 @@ class Invocation(Expr):
 
         self.datatype = func_dec.return_type  # may be None if func is void
         return self.datatype
+
+    def check_null_references(self):
+        for arg in self.args:
+            arg.check_null_references()

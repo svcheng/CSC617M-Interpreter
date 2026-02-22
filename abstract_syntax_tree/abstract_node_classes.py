@@ -53,6 +53,10 @@ class Node:
     def _find_returns(self) -> list[ReturnStmt]:
         return []
 
+    def check_null_references(self) -> None:
+        """Checks that variables are not referenced before they are initialized."""
+        pass
+
 
 @dataclass
 class Expr(Node):

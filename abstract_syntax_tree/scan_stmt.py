@@ -18,7 +18,7 @@ class ScanStmt(Node):
         self.scope = scope
         self.lval.init_scope(scope)
 
-    def build_var_tables(self) -> None:
+    def build_var_tables(self):
         self.lval.build_var_tables()
 
     def check_types(self) -> None:
@@ -41,3 +41,8 @@ class ScanStmt(Node):
                 arg_type=str(STR),
                 param_type=str(lval_type.name),
             )
+
+    def check_null_references(self):
+        assert self.scope is not None
+        if isinstance(self.lval, Identifier):
+            self.scope.initialize(str(self.lval))

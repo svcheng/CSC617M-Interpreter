@@ -87,7 +87,7 @@ class FuncDec(Node):
         for return_stmt in return_stmts:
             self._check_return(return_stmt.meta_info, return_stmt.value)
 
-    def _check_return(self, meta: MetaInfo, value: Expr) -> None:
+    def _check_return(self, meta: MetaInfo, value: Expr):
         func_name = str(self.name)
         expected_return_type = self.return_type
 
@@ -146,3 +146,7 @@ class FuncDec(Node):
             return_stmts.extend(stmt_returns)
 
         return return_stmts
+
+    def check_null_references(self):
+        for stmt in self.body:
+            stmt.check_null_references()

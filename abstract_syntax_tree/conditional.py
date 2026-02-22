@@ -69,3 +69,11 @@ class Conditional(Node):
             for stmt in self.else_block:
                 return_stmts.extend(stmt._find_returns())
         return return_stmts
+
+    def check_null_references(self):
+        self.condition.check_null_references()
+        for stmt in self.then_block:
+            stmt.check_null_references()
+        if self.else_block is not None:
+            for stmt in self.else_block:
+                stmt.check_null_references()

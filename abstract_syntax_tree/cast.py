@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from errors import (
     InvalidCastArgumentError,
@@ -13,7 +12,7 @@ from errors import (
 from .abstract_node_classes import Expr
 from .aux_classes import Scope
 from .literal import Literal
-from .types import BASIC_TYPES, BOOL, CHAR, FLOAT, INT, STR, NotArrayType, Type
+from .types import BASIC_TYPES, BOOL, CHAR, FLOAT, INT, STR, NotArrayType
 
 
 @dataclass
@@ -25,7 +24,7 @@ class Cast(Expr):
         self.scope = scope
         self.arg.init_scope(scope)
 
-    def build_var_tables(self) -> None:
+    def build_var_tables(self):
         assert self.scope is not None
         # check that target type is a real (NotArray) type
         target_type = self.target_type.value
@@ -42,7 +41,7 @@ class Cast(Expr):
 
         self.arg.build_var_tables()
 
-    def check_types(self) -> Optional[Type]:
+    def check_types(self):
         meta = self.meta_info
         arg_type = self.arg.check_types()
 
@@ -74,3 +73,6 @@ class Cast(Expr):
 
         self.datatype = target_type
         return self.datatype
+
+    def check_null_references(self):
+        self.arg.check_null_references()

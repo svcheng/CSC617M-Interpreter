@@ -2,12 +2,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from errors import KeywordCollisionError, NameCollisionError, VoidExpressionError
+from errors import (
+    KeywordCollisionError,
+    MutableConstantError,
+    NameCollisionError,
+    VoidExpressionError,
+)
 
 from .abstract_node_classes import Expr, Node
 from .aux_classes import Scope, VarInfo
 from .identifier import Identifier
-from .types import RESERVED_WORDS
+from .types import BASIC_TYPES, RESERVED_WORDS, ArrayType
 
 
 @dataclass
@@ -19,7 +24,7 @@ class ConstDec(Node):
         self.scope = scope
         self.value.init_scope(scope)
 
-    def build_var_tables(self) -> None:
+    def build_var_tables(self):
         assert self.scope is not None
         name = str(self.name)
         meta = self.meta_info
@@ -49,9 +54,20 @@ class ConstDec(Node):
         self.value.build_var_tables()
         self.scope.insert_varname(name, VarInfo(True, None))
 
-    def check_types(self) -> None:
-        assert self.scope is not None
+    def check_types(self):
         value_type = self.value.check_types()
+        type_name = str(value_type)
         if value_type is None:
             raise VoidExpressionError(self.meta_info)
+        elif isinstance(value_type, ArrayType) or type_name not in BASIC_TYPES:
+            raise MutableConstantError(self.meta_info, type_name=type_name)
+
+        assert self.scope is not None
         self.scope.set_type(str(self.name), datatype=value_type)
+
+    def check_null_references(self):
+        self.value.check_null_references()
+
+        # constants are always initialized
+        assert self.scope is not None
+        self.scope.initialize(str(self.name))
