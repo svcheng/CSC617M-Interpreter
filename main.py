@@ -16,6 +16,7 @@ def analysis(ast: Program):
         ast.check_types()
         ast.check_returns()
         ast.check_null_references()
+        ast.ensure_exhaustive_returns()
     except CustomError as e:
         print("Compilation failed with the following error:")
         print(e)
@@ -25,10 +26,23 @@ def analysis(ast: Program):
 
 if __name__ == "__main__":
     s = """
-        record pair {x: float, y: float}
+        int func() {
+            while (3 < 4) {
+                return 4;
+            }
+            if (5 < 4) {
+                let x = 6;
+                return 4;
+            } else {
+                let x = 6;
+                while (true) {
+                if (8 == 7) {return 4;} else {return 5;}
+                }
+
+            }
+            return 5;
+        }
         main: {
-        var x = 5;
-        let y = x;
         }
     """
     parser = Lark.open(

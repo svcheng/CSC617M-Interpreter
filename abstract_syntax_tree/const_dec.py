@@ -12,7 +12,7 @@ from errors import (
 from .abstract_node_classes import Expr, Node
 from .aux_classes import Scope, VarInfo
 from .identifier import Identifier
-from .types import BASIC_TYPES, RESERVED_WORDS, ArrayType
+from .types import BASIC_TYPES, RESERVED_WORDS
 
 
 @dataclass
@@ -59,7 +59,7 @@ class ConstDec(Node):
         type_name = str(value_type)
         if value_type is None:
             raise VoidExpressionError(self.meta_info)
-        elif isinstance(value_type, ArrayType) or type_name not in BASIC_TYPES:
+        elif type_name not in BASIC_TYPES:
             raise MutableConstantError(self.meta_info, type_name=type_name)
 
         assert self.scope is not None

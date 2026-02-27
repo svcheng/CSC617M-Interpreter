@@ -57,6 +57,11 @@ class Node:
         """Checks that variables are not referenced before they are initialized."""
         pass
 
+    # only overriden by Program, FuncDec, Conditional, ReturnStmt
+    def ensure_exhaustive_returns(self) -> bool:
+        """Ensures that in non-void functions, a return statement will always be reached (unless a runtime error occurs)."""
+        return False
+
 
 @dataclass
 class Expr(Node):

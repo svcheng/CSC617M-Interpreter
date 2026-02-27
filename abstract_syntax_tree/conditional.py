@@ -77,3 +77,15 @@ class Conditional(Node):
         if self.else_block is not None:
             for stmt in self.else_block:
                 stmt.check_null_references()
+
+    def ensure_exhaustive_returns(self):
+        then_is_exhaustive = any(
+            [stmt.ensure_exhaustive_returns() for stmt in self.then_block]
+        )
+        if self.else_block is not None:
+            else_is_exhaustive = any(
+                [stmt.ensure_exhaustive_returns() for stmt in self.else_block]
+            )
+            return then_is_exhaustive and else_is_exhaustive
+        else:
+            return then_is_exhaustive

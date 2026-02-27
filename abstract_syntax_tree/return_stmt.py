@@ -31,3 +31,6 @@ class ReturnStmt(Node):
     def check_null_references(self):
         if self.value is not None:
             self.value.check_null_references()
+
+    def ensure_exhaustive_returns(self):
+        return True

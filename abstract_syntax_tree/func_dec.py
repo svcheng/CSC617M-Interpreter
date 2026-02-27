@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 from abstract_syntax_tree.aux_classes import MetaInfo
+from abstract_syntax_tree.conditional import Conditional
+from abstract_syntax_tree.return_stmt import ReturnStmt
 from errors import (
     InvalidBaseTypeError,
     InvalidReturnValueError,
@@ -87,7 +89,7 @@ class FuncDec(Node):
         for return_stmt in return_stmts:
             self._check_return(return_stmt.meta_info, return_stmt.value)
 
-    def _check_return(self, meta: MetaInfo, value: Expr):
+    def _check_return(self, meta: MetaInfo, value: Optional[Expr]):
         func_name = str(self.name)
         expected_return_type = self.return_type
 
@@ -107,7 +109,7 @@ class FuncDec(Node):
                 is_void=False,
                 show_code_block=False,
             )
-        assert expected_return_type is not None
+        assert expected_return_type is not None and value is not None
 
         #  check that return types are equal, at this point func is not void and return value exists
         actual_return_type = value.check_types()
@@ -150,3 +152,10 @@ class FuncDec(Node):
     def check_null_references(self):
         for stmt in self.body:
             stmt.check_null_references()
+
+    def ensure_exhaustive_returns(self):
+        # skip for void functions
+        if self.return_type is None:
+            return True
+
+        return any([stmt.ensure_exhaustive_returns() for stmt in self.body])

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from errors import NonExhaustiveReturnsError
+
 from .abstract_node_classes import Node
 from .aux_classes import Scope
 from .func_dec import FuncDec
@@ -62,3 +64,10 @@ class Program(Node):
 
         for stmt in self.main_block:
             stmt.check_null_references()
+
+    def ensure_exhaustive_returns(self):
+        for dec in self.func_decs:
+            if not dec.ensure_exhaustive_returns():
+                raise NonExhaustiveReturnsError(dec.meta_info, str(dec.name))
+
+        return True

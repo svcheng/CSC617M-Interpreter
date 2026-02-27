@@ -413,3 +413,14 @@ class NullReferenceError(CustomError):
         super().__init__(
             msg_prefix=msg_prefix, error_msg=error_msg, meta_info=meta_info
         )
+
+
+class NonExhaustiveReturnsError(CustomError):
+    error_name = "NON-EXHAUSTIVE-RETURNS ERROR"
+
+    def __init__(self, meta_info: MetaInfo, func_name: str):
+        msg_prefix = self.error_name + " found in "
+        error_msg = f'Non-void function "{func_name}" is not guaranteed to return'
+        super().__init__(
+            msg_prefix=msg_prefix, error_msg=error_msg, meta_info=meta_info
+        )

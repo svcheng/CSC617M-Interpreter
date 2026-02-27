@@ -1,16 +1,17 @@
-Syntax rules (besides grammar rules)
+Syntax rules (besides grammar rules) (done)
 - records should not be defined recursively
 - functions
     - functions should be passed the correct number of parameters
     - return statements should only be in function bodies
     - void functions should not return values and non-void functions should return values
+    - return path checking
 - declarations
     - identifiers should not be keywords
     - declared types of variables/arguments should be defined
     - identifiers should not be reused (within a scope)
     - identifiers should not be referenced before they are declared
 
-Compile-time Semantics
+Compile-time Semantics (done)
 - constants cannot be re-assigned
 - constants cannot be records and arrays (these are mutable)
 - scoping rule
