@@ -34,6 +34,11 @@ if __name__ == "__main__":
             until (1 < 2);
         }
         main: {
+            let x = 5;
+            if (true) {
+                let y = 5;
+            }
+            while (false) {let y = 5;}
         }
     """
     parser = Lark.open(

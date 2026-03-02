@@ -27,9 +27,8 @@ Compile-time Semantics (done)
 - "null" references (except for array access (except for the indices))
 
 Run-time Semantics
-- to determine value of variable when its name is bound to more than 1 variable, choose the one in the innermost scope
 - everything is pass by value except records and arrays
-- array accesa bounds checking
+- array access bounds checking
 - NULL reference - array and field access
 - auto type casting in arithmetic ops
 - type checking for array variable assignment (assigning array to another array) and returning arrays (sizes must be the same, exact size of array can only be known at runtime)
