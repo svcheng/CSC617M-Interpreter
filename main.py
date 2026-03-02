@@ -27,20 +27,11 @@ def analysis(ast: Program):
 if __name__ == "__main__":
     s = """
         int func() {
-            while (3 < 4) {
+            repeat {
+                let x = 5;
                 return 4;
             }
-            if (5 < 4) {
-                let x = 6;
-                return 4;
-            } else {
-                let x = 6;
-                while (true) {
-                if (8 == 7) {return 4;} else {return 5;}
-                }
-
-            }
-            return 5;
+            until (1 < 2);
         }
         main: {
         }

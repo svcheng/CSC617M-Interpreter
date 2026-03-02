@@ -420,7 +420,9 @@ class NonExhaustiveReturnsError(CustomError):
 
     def __init__(self, meta_info: MetaInfo, func_name: str):
         msg_prefix = self.error_name + " found in "
-        error_msg = f'Non-void function "{func_name}" is not guaranteed to return'
+        error_msg = (
+            f'Non-void function "{func_name}" is not guaranteed to return a value'
+        )
         super().__init__(
             msg_prefix=msg_prefix, error_msg=error_msg, meta_info=meta_info
         )

@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from typing import Optional
 
 from abstract_syntax_tree.aux_classes import MetaInfo
-from abstract_syntax_tree.conditional import Conditional
-from abstract_syntax_tree.return_stmt import ReturnStmt
 from errors import (
     InvalidBaseTypeError,
     InvalidReturnValueError,

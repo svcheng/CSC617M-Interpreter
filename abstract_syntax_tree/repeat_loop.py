@@ -52,3 +52,6 @@ class RepeatLoop(Node):
         self.cond.check_null_references()
         for stmt in self.body:
             stmt.check_null_references()
+
+    def ensure_exhaustive_returns(self):
+        return any([stmt.ensure_exhaustive_returns() for stmt in self.body])
