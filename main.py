@@ -63,7 +63,7 @@ if __name__ == "__main__":
     # read inputs and perform scanning
     arg_parser = argparse.ArgumentParser(description="Interpreter")
     arg_parser.add_argument("filename", help="Source file to interpret")
-    arg_parser.add_argument("-o", "--output", help="Write scanner output to file")
+    arg_parser.add_argument("-so", "--output", help="Write scanner output to file")
     args = arg_parser.parse_args()
 
     program_str = Path(args.filename).read_text(encoding="utf-8")
@@ -75,13 +75,13 @@ if __name__ == "__main__":
     )
     parse_tree = parser.parse(program_str)
 
-    print("=========================== Parse Tree ===========================")
-    print(parse_tree.pretty())
+    # print("=========================== Parse Tree ===========================")
+    # print(parse_tree.pretty())
 
     # create AST
     ast = ASTConstructor(program_str).transform(parse_tree)
 
-    # perform compile-time syntax and semantic checking
+    # perform "compile time" (pre-execution) syntax and semantic checking
     analysis(ast)
 
     # print(

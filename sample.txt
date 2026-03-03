@@ -2,6 +2,13 @@ int func() {
     return 0;
 }
 main: {
-    var x = 5;
-    x = func();
+    for (i;1;10;2) {
+        print(i);
+    }
+
+    var a: int;
+    var b: float;
+    a = 5;
+    b = 5.0;
+    let myBool = a == b;
 }

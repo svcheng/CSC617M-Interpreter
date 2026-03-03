@@ -71,6 +71,9 @@ class ForLoop(Node):
         return return_stmts
 
     def check_null_references(self):
+        assert self.scope is not None
+        self.scope.initialize(str(self.iterator_name))
+
         self.range_start.check_null_references()
         self.range_end.check_null_references()
         self.step.check_null_references()

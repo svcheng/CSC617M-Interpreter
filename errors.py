@@ -47,6 +47,11 @@ class Warning(CustomError):
         )
 
 
+# ===========================================
+# Analysis errors
+# ===========================================
+
+
 class KeywordCollisionError(CustomError):
     error_name = "KEYWORD-COLLISION ERROR"
 
