@@ -1,0 +1,10 @@
+record Pair {x: int, y: float}
+int f(n: int) {
+    if (true) {
+       return 1;
+    } else {
+    }
+    return 1;
+}
+
+main: {}

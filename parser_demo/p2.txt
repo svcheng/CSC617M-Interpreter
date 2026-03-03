@@ -1,0 +1,11 @@
+record Pair {x: float, y: float}
+void f() {}
+
+main: {
+    var x: int;
+    y = 4;
+
+    if (true) {
+        var x = 5;
+    } else {}
+}

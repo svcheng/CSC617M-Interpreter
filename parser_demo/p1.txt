@@ -1,0 +1,16 @@
+record Pair {x: float, y: float}
+void f() {}
+
+main: {
+    var x = 2*(5 + 1);
+    print(x);
+
+    while (true) {
+        var y: bool;
+        y = !cast(1, "bool") && true;
+    }
+
+    for (i;1;2;10) {
+        repeat {print("hi");} until (4 < 6);
+    }
+}

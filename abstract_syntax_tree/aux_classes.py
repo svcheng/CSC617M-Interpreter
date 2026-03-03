@@ -99,7 +99,13 @@ class Scope:
     #######################
 
     def is_initialized(self, var_name: str) -> bool:
-        return var_name in self.initialized_table
+        if var_name in self.initialized_table:
+            return True
+        elif self.parent_scope is not None and self.parent_scope.is_initialized(
+            var_name
+        ):
+            return True
+        return False
 
     def initialize(self, var_name: str) -> None:
         self.initialized_table.add(var_name)

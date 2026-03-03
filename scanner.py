@@ -80,7 +80,13 @@ def scan_text(text, lexer, output_file=None):
         Path(output_file).write_text("\n".join(out_lines), encoding="utf-8")
         print(f"Output dumped to {output_file}")
     else:
-        print("\n".join(out_lines))
+        pass  # don't print to terminal for now
+        # print("\n".join(out_lines))
+
+
+def scan(program_str: str, output_file):
+    lexer = build_lexer()
+    scan_text(program_str, lexer, output_file)
 
 
 def main():
@@ -89,9 +95,8 @@ def main():
     parser.add_argument("-o", "--output", help="Write scanner output to file")
     args = parser.parse_args()
 
-    lexer = build_lexer()
     src = Path(args.filename).read_text(encoding="utf-8")
-    scan_text(src, lexer, args.output)
+    scan(src, args.output)
 
 
 if __name__ == "__main__":

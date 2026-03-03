@@ -1,0 +1,10 @@
+record Pair {x: int, y: float}
+int f() {return 4;}
+
+main: {
+    var p: Pair;
+    p.x = 1;
+    p.y = 1.0;
+    let z = p.x + p.y;
+    let b = z > 0.0;
+}
