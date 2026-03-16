@@ -1,0 +1,8 @@
+int arr[2] bad() {
+    var t: int arr[3];
+    return t;
+}
+main: {
+    var x: int arr[2];
+    x = bad();
+}

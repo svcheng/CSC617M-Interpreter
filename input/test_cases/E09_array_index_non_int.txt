@@ -1,0 +1,4 @@
+main: {
+    var a: int arr[3];
+    print(a[1.5]);
+}

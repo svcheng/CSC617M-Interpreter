@@ -1,0 +1,7 @@
+Compilation failed with the following error:
+RECURSIVE-TYPE-DEFINITION ERROR found in type declaration, lines 1-3: Recursive definition of custom type
+--------------------------------------------------
+record A {
+    a: A
+}
+--------------------------------------------------

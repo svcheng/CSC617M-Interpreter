@@ -1,0 +1,5 @@
+Compilation failed with the following error:
+TYPE-MISMATCH ERROR found in assignment, line 3: "str" given but "int" expected
+--------------------------------------------------
+x = "hello";
+--------------------------------------------------

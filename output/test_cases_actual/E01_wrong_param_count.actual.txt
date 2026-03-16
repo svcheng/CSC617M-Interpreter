@@ -1,0 +1,6 @@
+Compilation failed with the following error:
+INCORRECT-PARAMETER-COUNT ERROR found in line 5: 2 parameters passed to function "f" (expected 1)
+--------------------------------------------------
+f(1, 2)
+--------------------------------------------------
+1

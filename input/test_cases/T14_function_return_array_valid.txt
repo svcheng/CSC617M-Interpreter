@@ -1,0 +1,13 @@
+int arr[2] mk() {
+    var t: int arr[2];
+    t[0] = 7;
+    t[1] = 8;
+    return t;
+}
+
+main: {
+    var x: int arr[2];
+    x = mk();
+    print(x[0]);
+    print(x[1]);
+}

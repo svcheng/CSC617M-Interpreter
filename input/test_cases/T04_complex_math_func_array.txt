@@ -1,0 +1,11 @@
+int add(x: int, y: int) {
+    return x + y;
+}
+
+main: {
+    var a: int arr[3];
+    a[0] = 2;
+    a[1] = 4;
+    a[2] = 6;
+    print(add(a[0] * 3, a[2] - 3));
+}

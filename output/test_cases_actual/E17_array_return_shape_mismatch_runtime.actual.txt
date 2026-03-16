@@ -1,0 +1,29 @@
+Traceback (most recent call last):
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 313, in eval_call
+    self.exec_block(func.body, fn_frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
+    self.exec_stmt(stmt, frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 121, in exec_stmt
+    raise ReturnSignal(
+interpreter.ReturnSignal: [0, 0, 0]
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
+    interpreter.run()
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
+    self.exec_block(self.ast.main_block, self.global_frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
+    self.exec_stmt(stmt, frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 107, in exec_stmt
+    self.exec_assignment(stmt, frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 153, in exec_assignment
+    value = self.eval_expr(stmt.rval, frame)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 253, in eval_expr
+    return self.eval_call(expr, frame)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 319, in eval_call
+    raise RuntimeError(
+RuntimeError: Invalid array return in "bad": expected shape (2,), got (3,)

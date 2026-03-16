@@ -1,0 +1,3 @@
+main: {
+    print(cast(1, "record"));
+}

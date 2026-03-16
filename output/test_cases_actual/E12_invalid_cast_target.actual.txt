@@ -1,0 +1,23 @@
+Compilation failed with the following error:
+NON-EXISTENT-NAME ERROR found in line 2: "record" is not a defined type
+--------------------------------------------------
+cast(1, "record")
+--------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
+    interpreter.run()
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
+    self.exec_block(self.ast.main_block, self.global_frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
+    self.exec_stmt(stmt, frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 109, in exec_stmt
+    self.exec_print(stmt, frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 176, in exec_print
+    value = self.eval_expr(stmt.value, frame)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 260, in eval_expr
+    result = self.eval_cast(expr.target_type.value, v)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 390, in eval_cast
+    raise RuntimeError(f"Invalid cast target {target}")
+RuntimeError: Invalid cast target record

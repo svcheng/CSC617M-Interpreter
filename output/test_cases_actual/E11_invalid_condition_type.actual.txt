@@ -1,0 +1,8 @@
+Compilation failed with the following error:
+INVALID-CONDITION ERROR found in lines 2-4: Conditions should be boolean but "int" given
+--------------------------------------------------
+if (123) {
+        print(1);
+    }
+--------------------------------------------------
+1

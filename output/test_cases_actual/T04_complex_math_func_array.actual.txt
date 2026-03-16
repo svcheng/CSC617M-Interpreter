@@ -1,0 +1,6 @@
+Compilation failed with the following error:
+NULL-REFERENCE ERROR found in line 2: "x" has not been assigned a value
+--------------------------------------------------
+x
+--------------------------------------------------
+9

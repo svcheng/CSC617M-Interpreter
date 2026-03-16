@@ -1,0 +1,6 @@
+main: {
+    var a = 10;
+    var b = 3;
+    var c = 4;
+    print(((a + b * c) > (a - b)) && !((a / b) < (c + 1)));
+}

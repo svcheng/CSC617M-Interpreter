@@ -1,0 +1,6 @@
+[TIMEOUT] Exceeded 15.0 seconds. Process terminated.
+Compilation failed with the following error:
+INCORRECT-PARAMETER-TYPE ERROR found in line 3: "scan" expects parameter of type "str" to be passed but "int" was received
+--------------------------------------------------
+scan(x);
+--------------------------------------------------

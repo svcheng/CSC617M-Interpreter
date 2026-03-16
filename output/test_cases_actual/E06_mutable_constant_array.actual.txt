@@ -1,0 +1,5 @@
+Compilation failed with the following error:
+MUTABLE-CONSTANT ERROR found in constant declaration, line 3: Constant cannot be initialized with mutable type "arr"
+--------------------------------------------------
+let c = a;
+--------------------------------------------------

@@ -1,0 +1,15 @@
+Compilation failed with the following error:
+MISPLACED-RETURN ERROR found in line 2: Return statement outside of function declaration
+--------------------------------------------------
+return 1;
+--------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
+    interpreter.run()
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
+    self.exec_block(self.ast.main_block, self.global_frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
+    self.exec_stmt(stmt, frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 121, in exec_stmt
+    raise ReturnSignal(
+interpreter.ReturnSignal: 1

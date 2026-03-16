@@ -1,0 +1,6 @@
+Compilation failed with the following error:
+INCORRECT-PARAMETER-TYPE ERROR found in line 5: "f" expects parameter of type "int" to be passed to "x" but "str was received
+--------------------------------------------------
+f("hello")
+--------------------------------------------------
+hello

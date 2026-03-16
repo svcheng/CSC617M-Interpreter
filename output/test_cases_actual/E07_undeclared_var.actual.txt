@@ -1,0 +1,3 @@
+Compilation failed with the following error:
+NON-EXISTENT-NAME ERROR found in line 2: "x" is not a defined variable/constant
+

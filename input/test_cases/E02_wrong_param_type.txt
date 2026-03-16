@@ -1,0 +1,6 @@
+int f(x: int) {
+    return x;
+}
+main: {
+    print(f("hello"));
+}

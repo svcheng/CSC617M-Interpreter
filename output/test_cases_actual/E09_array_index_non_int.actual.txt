@@ -1,0 +1,23 @@
+Compilation failed with the following error:
+INVALID-INDEX-TYPE Error found in line 3: Indices should be integers but 1st index has type "float"
+--------------------------------------------------
+a[1.5]
+--------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
+    interpreter.run()
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
+    self.exec_block(self.ast.main_block, self.global_frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
+    self.exec_stmt(stmt, frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 109, in exec_stmt
+    self.exec_print(stmt, frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 176, in exec_print
+    value = self.eval_expr(stmt.value, frame)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 255, in eval_expr
+    return self.eval_arr_access(expr, frame)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 330, in eval_arr_access
+    raise RuntimeError("Array index must be integer")
+RuntimeError: Array index must be integer

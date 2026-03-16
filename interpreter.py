@@ -156,6 +156,14 @@ class Interpreter:
         match stmt.lval:
             case Identifier():
                 name = str(stmt.lval.name)
+                lval_type = stmt.lval.scope.get_type(name) if stmt.lval.scope else None
+                if isinstance(lval_type, ArrayType):
+                    expected_shape = self.eval_array_decl_shape(lval_type, frame)
+                    actual_shape = self.get_array_shape(value, "array assignment")
+                    if expected_shape != actual_shape:
+                        raise RuntimeError(
+                            f"Array assignment shape mismatch: expected {expected_shape}, got {actual_shape}"
+                        )
                 frame.assign(name, value, constant=False)
             case FieldAccess():
                 self.set_field(stmt.lval, value, frame)
@@ -304,6 +312,13 @@ class Interpreter:
         try:
             self.exec_block(func.body, fn_frame)
         except ReturnSignal as r:
+            if isinstance(func.return_type, ArrayType):
+                expected_shape = self.eval_array_decl_shape(func.return_type, fn_frame)
+                actual_shape = self.get_array_shape(r.value, f'return of "{name}"')
+                if expected_shape != actual_shape:
+                    raise RuntimeError(
+                        f'Invalid array return in "{name}": expected shape {expected_shape}, got {actual_shape}'
+                    )
             return r.value
         return None
 
@@ -323,8 +338,16 @@ class Interpreter:
         indices = [self.eval_expr(i, frame) for i in expr.indices]
         sub = arr
         for idx in indices[:-1]:
+            if not isinstance(idx, int):
+                raise RuntimeError("Array index must be integer")
+            if idx < 0 or idx >= len(sub):
+                raise RuntimeError("Array index out of bounds")
             sub = sub[idx]
         last = indices[-1]
+        if not isinstance(last, int):
+            raise RuntimeError("Array index must be integer")
+        if last < 0 or last >= len(sub):
+            raise RuntimeError("Array index out of bounds")
         sub[last] = value
 
     def eval_field_access(self, expr: FieldAccess, frame: Frame):
@@ -407,3 +430,31 @@ class Interpreter:
         if typename == str(STR):
             return ""
         return None
+
+    def eval_array_decl_shape(self, typ: ArrayType, frame: Frame) -> tuple[int, ...]:
+        sizes = tuple(self.eval_expr(dim, frame) for dim in typ.size)
+        if any(not isinstance(s, int) or s < 0 for s in sizes):
+            raise RuntimeError("Array size must be non-negative integer(s)")
+        return sizes
+
+    def get_array_shape(self, value: Any, context: str) -> tuple[int, ...]:
+        if not isinstance(value, list):
+            raise RuntimeError(f"Expected array value in {context}")
+
+        shape: list[int] = []
+        cur = value
+        while isinstance(cur, list):
+            shape.append(len(cur))
+            if len(cur) == 0:
+                break
+
+            first = cur[0]
+            first_is_list = isinstance(first, list)
+            for elem in cur:
+                if isinstance(elem, list) != first_is_list:
+                    raise RuntimeError(f"Ragged array is not supported in {context}")
+                if first_is_list and len(elem) != len(first):
+                    raise RuntimeError(f"Ragged array is not supported in {context}")
+            cur = first
+
+        return tuple(shape)

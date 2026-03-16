@@ -7,6 +7,7 @@ from errors import ConstantReassignmentError, TypeMismatchError, VoidExpressionE
 
 from .abstract_node_classes import Expr, Node
 from .aux_classes import Scope
+from .types import ArrayType
 
 
 @dataclass
@@ -42,6 +43,16 @@ class Assignment(Node):
                 str(left_type.name),
                 str(right_type.name),
             )
+
+        if isinstance(left_type, ArrayType) and isinstance(right_type, ArrayType):
+            left_dim = len(left_type.size)
+            right_dim = len(right_type.size)
+            if left_type.base_type != right_type.base_type or left_dim != right_dim:
+                raise TypeMismatchError(
+                    self.meta_info,
+                    f"{left_dim}D {left_type.base_type} arr",
+                    f"{right_dim}D {right_type.base_type} arr",
+                )
 
     def check_null_references(self):
         self.rval.check_null_references()

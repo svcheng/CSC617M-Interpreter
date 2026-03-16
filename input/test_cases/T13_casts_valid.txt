@@ -1,0 +1,6 @@
+main: {
+    print(cast("123", "int"));
+    print(cast(10, "float"));
+    print(cast("true", "bool"));
+    print(cast(65, "char"));
+}

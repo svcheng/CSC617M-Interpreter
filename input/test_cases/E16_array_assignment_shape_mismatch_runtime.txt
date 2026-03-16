@@ -1,0 +1,5 @@
+main: {
+    var a: int arr[2];
+    var b: int arr[3];
+    a = b;
+}

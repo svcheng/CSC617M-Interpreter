@@ -89,5 +89,5 @@ if __name__ == "__main__":
     # )
     # print_ast(ast)
 
-    interpreter = Interpreter(ast, debug=True)
+    interpreter = Interpreter(ast, debug=False)
     interpreter.run()

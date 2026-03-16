@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
+    interpreter.run()
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
+    self.exec_block(self.ast.main_block, self.global_frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
+    self.exec_stmt(stmt, frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 107, in exec_stmt
+    self.exec_assignment(stmt, frame)
+  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 164, in exec_assignment
+    raise RuntimeError(
+RuntimeError: Array assignment shape mismatch: expected (2,), got (3,)
