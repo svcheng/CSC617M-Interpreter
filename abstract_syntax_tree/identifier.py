@@ -35,5 +35,11 @@ class Identifier(Node):
         assert self.scope is not None
         name = str(self.name)
 
+        # skip if parameter
+        var_info = self.scope.get_var_info(name)
+        assert var_info is not None
+        if var_info.is_parameter:
+            return
+
         if not self.scope.is_initialized(name):
             raise NullReferenceError(self.meta_info, var_name=name)

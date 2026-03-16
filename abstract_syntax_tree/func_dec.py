@@ -74,7 +74,9 @@ class FuncDec(Node):
     def build_var_tables(self):
         assert self.scope is not None
         for arg_name, arg_type in self.args:
-            self.scope.insert_varname(str(arg_name), VarInfo(False, arg_type))
+            self.scope.insert_varname(
+                str(arg_name), VarInfo(False, arg_type, is_parameter=True)
+            )
         for stmt in self.body:
             stmt.build_var_tables()
 

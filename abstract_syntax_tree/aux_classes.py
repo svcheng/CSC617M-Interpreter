@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 class VarInfo:
     is_constant: bool
     datatype: Optional[Type]  # None for variables declared with assignment
+    is_parameter: bool = False
 
 
 @dataclass
