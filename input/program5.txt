@@ -1,10 +1,13 @@
 main: {
-    var flag = true;
+    var flag_str = "true";   
+    var flag = true;        
+
     var ch = 'A';
     var msg = "Hello";
 
     repeat {
-        scan(flag);
+        scan(flag_str);
+        flag = cast(flag_str, "bool");
         print(msg);
     } until (!flag);
 

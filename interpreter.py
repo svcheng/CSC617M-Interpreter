@@ -213,7 +213,7 @@ class Interpreter:
     def exec_repeat(self, stmt: RepeatLoop, frame: Frame):
         while True:
             try:
-                self.exec_block(stmt.body, Frame(frame))
+                self.exec_block(stmt.body, frame)   
             except ReturnSignal as r:
                 raise r
             if self.eval_expr(stmt.cond, frame):
@@ -249,7 +249,9 @@ class Interpreter:
                 return self.eval_field_access(expr, frame)
             case Cast():
                 v = self.eval_expr(expr.arg, frame)
-                return self.eval_cast(expr.target_type.value, v)
+                result = self.eval_cast(expr.target_type.value, v)
+                self.trace(f"EVAL Cast ({expr.target_type.value}) {v} = {result}")
+                return result
             case _:
                 raise NotImplementedError(f"Eval not implemented for {type(expr)}")
 
@@ -342,12 +344,26 @@ class Interpreter:
             return int(value)
         if target == "float":
             return float(value)
+
         if target == "bool":
+            # Handle string input explicitly
+            if isinstance(value, str):
+                v = value.strip().lower()
+                if v in ("true", "1"):
+                    return True
+                if v in ("false", "0"):
+                    return False
+                raise RuntimeError(f'Cannot cast "{value}" to bool')
+            # For numeric conversions, preserve language-style behavior
+            if isinstance(value, (int, float)):
+                return value != 0
             return bool(value)
+
         if target == "char":
             return str(value)[0]
         if target == "str":
             return str(value)
+
         raise RuntimeError(f"Invalid cast target {target}")
 
     # -------- helpers for default values --------
