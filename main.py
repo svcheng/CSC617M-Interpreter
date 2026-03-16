@@ -9,7 +9,7 @@ from abstract_syntax_tree.program import Program
 from ast_construction import ASTConstructor
 from errors import CustomError
 from scanner import scan
-
+from interpreter import Interpreter
 
 def print_ast(node, indent=0):
     pad = "  " * indent
@@ -88,3 +88,6 @@ if __name__ == "__main__":
     #     "=========================== Abstract Syntax Tree ==========================="
     # )
     # print_ast(ast)
+
+    interpreter = Interpreter(ast, debug=True)
+    interpreter.run()
