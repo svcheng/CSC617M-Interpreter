@@ -64,8 +64,11 @@ class FieldAccess(Expr):
                 )
             assert attr_type is not None
 
-            # set new type dec
-            prev_type_dec = self.scope.get_type_dec(str(attr_type.name))
+            # set new type dec; prev_type_dec will be none if attr_type is not a record
+            try:
+                prev_type_dec = self.scope.get_type_dec(str(attr_type.name))
+            except Exception:
+                prev_type_dec = None
             # only last attr can have basic type
             if prev_type_dec is None and (i + 1) < len(self.attributes):
                 raise NonRecordFieldAccessError(meta, var_name=attr)
