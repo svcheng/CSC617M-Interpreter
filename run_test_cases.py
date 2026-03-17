@@ -141,6 +141,11 @@ CASES: list[dict] = [
         "mode": "contains",
         "expected": ['Invalid array return in "bad"'],
     },
+    {
+        "file": "E18_multiple_defined_variable.txt",
+        "mode": "contains",
+        "expected": ['NAME-COLLISION ERROR'],
+    },
 ]
 
 

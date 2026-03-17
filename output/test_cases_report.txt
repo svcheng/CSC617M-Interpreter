@@ -357,4 +357,15 @@ Expected:
 Actual:
 Invalid array return in "bad": expected shape (2,), got (3,)
 ==================================================
-Finished 37 test case(s).
+Test: E18_multiple_defined_variable.txt
+ExitCode: 0
+Expected:
+ - NAME-COLLISION ERROR
+Actual:
+Compilation failed with the following error:
+NAME-COLLISION ERROR found in line 4: "x" is already bound to an existing variable or constant
+--------------------------------------------------
+var x = 20;
+--------------------------------------------------
+==================================================
+Finished 38 test case(s).

@@ -1,0 +1,5 @@
+Compilation failed with the following error:
+NAME-COLLISION ERROR found in line 4: "x" is already bound to an existing variable or constant
+--------------------------------------------------
+var x = 20;
+--------------------------------------------------
