@@ -130,6 +130,8 @@ class Interpreter:
                 self.exec_for(stmt, frame)
             case RepeatLoop():
                 self.exec_repeat(stmt, frame)
+            case Invocation():
+                self.eval_call(stmt, frame)
             case ReturnStmt():
                 raise ReturnSignal(
                     self.eval_expr(stmt.value, frame) if stmt.value else None
