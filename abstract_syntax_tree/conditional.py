@@ -88,4 +88,5 @@ class Conditional(Node):
             )
             return then_is_exhaustive and else_is_exhaustive
         else:
-            return then_is_exhaustive
+            # if there is no else, the if-statement does not guarantee a return, even if the then-block is exhaustive
+            return False

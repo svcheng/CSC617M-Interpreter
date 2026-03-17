@@ -167,7 +167,15 @@ ExitCode: 0
 Expected:
  - NON-EXHAUSTIVE-RETURNS ERROR
 Actual:
-1
+Compilation failed with the following error:
+NON-EXHAUSTIVE-RETURNS ERROR found in lines 1-5: Non-void function "f" is not guaranteed to return a value
+--------------------------------------------------
+int f(x: int) {
+    if (x > 0) {
+        return x;
+    }
+}
+--------------------------------------------------
 ==================================================
 Test: E05_const_reassign.txt
 ExitCode: 0

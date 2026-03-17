@@ -154,8 +154,10 @@ class FuncDec(Node):
             stmt.check_null_references()
 
     def ensure_exhaustive_returns(self):
-        # skip for void functions
         if self.return_type is None:
             return True
 
-        return any([stmt.ensure_exhaustive_returns() for stmt in self.body])
+        for stmt in self.body:
+            if stmt.ensure_exhaustive_returns():
+                return True
+        return False
