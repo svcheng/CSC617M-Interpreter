@@ -3,4 +3,3 @@ INCORRECT-PARAMETER-TYPE ERROR found in line 5: "f" expects parameter of type "i
 --------------------------------------------------
 f("hello")
 --------------------------------------------------
-hello

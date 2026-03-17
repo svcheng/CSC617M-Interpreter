@@ -27,11 +27,6 @@ ExitCode: 0
 Expected:
 9
 Actual:
-Compilation failed with the following error:
-NULL-REFERENCE ERROR found in line 2: "x" has not been assigned a value
---------------------------------------------------
-x
---------------------------------------------------
 9
 ==================================================
 Test: T05_simple_boolean_relops.txt
@@ -72,87 +67,18 @@ ExitCode: 0
 Expected:
 15
 Actual:
-0
+15
 ==================================================
 Test: T09_while_loop.txt
-ExitCode: -999
-TimedOut: True (>15.0s)
+ExitCode: 0
 Expected:
 3
 2
 1
 Actual:
-[TIMEOUT] Exceeded 15.0 seconds. Process terminated.
 3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-... [truncated: showing first 70 of 638938 lines]
+2
+1
 ==================================================
 Test: T10_repeat_until.txt
 ExitCode: 0
@@ -213,7 +139,6 @@ INCORRECT-PARAMETER-COUNT ERROR found in line 5: 2 parameters passed to function
 --------------------------------------------------
 f(1, 2)
 --------------------------------------------------
-1
 ==================================================
 Test: E02_wrong_param_type.txt
 ExitCode: 0
@@ -225,10 +150,9 @@ INCORRECT-PARAMETER-TYPE ERROR found in line 5: "f" expects parameter of type "i
 --------------------------------------------------
 f("hello")
 --------------------------------------------------
-hello
 ==================================================
 Test: E03_return_in_main.txt
-ExitCode: 1
+ExitCode: 0
 Expected:
  - MISPLACED-RETURN ERROR
 Actual:
@@ -237,31 +161,16 @@ MISPLACED-RETURN ERROR found in line 2: Return statement outside of function dec
 --------------------------------------------------
 return 1;
 --------------------------------------------------
-Traceback (most recent call last):
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
-    interpreter.run()
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
-    self.exec_block(self.ast.main_block, self.global_frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
-    self.exec_stmt(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 121, in exec_stmt
-    raise ReturnSignal(
-interpreter.ReturnSignal: 1
 ==================================================
 Test: E04_non_void_missing_return.txt
 ExitCode: 0
 Expected:
  - NON-EXHAUSTIVE-RETURNS ERROR
 Actual:
-Compilation failed with the following error:
-NULL-REFERENCE ERROR found in line 2: "x" has not been assigned a value
---------------------------------------------------
-x
---------------------------------------------------
 1
 ==================================================
 Test: E05_const_reassign.txt
-ExitCode: 1
+ExitCode: 0
 Expected:
  - CONSTANT-RE-ASSIGNMENT ERROR
 Actual:
@@ -270,20 +179,6 @@ CONSTANT-RE-ASSIGNMENT ERROR found in line 3: Constants cannot be re-assigned
 --------------------------------------------------
 x = 6;
 --------------------------------------------------
-Traceback (most recent call last):
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
-    interpreter.run()
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
-    self.exec_block(self.ast.main_block, self.global_frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
-    self.exec_stmt(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 107, in exec_stmt
-    self.exec_assignment(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 167, in exec_assignment
-    frame.assign(name, value, constant=False)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 54, in assign
-    raise RuntimeError(f"Cannot reassign constant '{name}'")
-RuntimeError: Cannot reassign constant 'x'
 ==================================================
 Test: E06_mutable_constant_array.txt
 ExitCode: 0
@@ -305,7 +200,7 @@ Compilation failed with the following error:
 NON-EXISTENT-NAME ERROR found in line 2: "x" is not a defined variable/constant
 ==================================================
 Test: E08_undeclared_type.txt
-ExitCode: 1
+ExitCode: 0
 Expected:
  - NON-EXISTENT-NAME ERROR
 Actual:
@@ -314,28 +209,9 @@ NON-EXISTENT-NAME ERROR found in line 2: "Person" is not a defined type
 --------------------------------------------------
 var p: Person;
 --------------------------------------------------
-Traceback (most recent call last):
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
-    interpreter.run()
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
-    self.exec_block(self.ast.main_block, self.global_frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
-    self.exec_stmt(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 103, in exec_stmt
-    self.exec_var_dec(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 137, in exec_var_dec
-    value = self.make_record_value(str(typ))
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 394, in make_record_value
-    type_dec = self.global_scope.get_type_dec(typename)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\abstract_syntax_tree\aux_classes.py", line 64, in get_type_dec
-    return self.type_table[type_name]
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^
-KeyError: 'Person'
 ==================================================
 Test: E09_array_index_non_int.txt
-ExitCode: 1
+ExitCode: 0
 Expected:
  - INVALID-INDEX-TYPE
 Actual:
@@ -344,24 +220,6 @@ INVALID-INDEX-TYPE Error found in line 3: Indices should be integers but 1st ind
 --------------------------------------------------
 a[1.5]
 --------------------------------------------------
-Traceback (most recent call last):
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
-    interpreter.run()
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
-    self.exec_block(self.ast.main_block, self.global_frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
-    self.exec_stmt(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 109, in exec_stmt
-    self.exec_print(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 176, in exec_print
-    value = self.eval_expr(stmt.value, frame)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 255, in eval_expr
-    return self.eval_arr_access(expr, frame)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 330, in eval_arr_access
-    raise RuntimeError("Array index must be integer")
-RuntimeError: Array index must be integer
 ==================================================
 Test: E10_assignment_type_mismatch.txt
 ExitCode: 0
@@ -386,10 +244,9 @@ if (123) {
         print(1);
     }
 --------------------------------------------------
-1
 ==================================================
 Test: E12_invalid_cast_target.txt
-ExitCode: 1
+ExitCode: 0
 Expected:
  - NON-EXISTENT-NAME ERROR
 Actual:
@@ -398,32 +255,12 @@ NON-EXISTENT-NAME ERROR found in line 2: "record" is not a defined type
 --------------------------------------------------
 cast(1, "record")
 --------------------------------------------------
-Traceback (most recent call last):
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
-    interpreter.run()
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
-    self.exec_block(self.ast.main_block, self.global_frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
-    self.exec_stmt(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 109, in exec_stmt
-    self.exec_print(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 176, in exec_print
-    value = self.eval_expr(stmt.value, frame)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 260, in eval_expr
-    result = self.eval_cast(expr.target_type.value, v)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 390, in eval_cast
-    raise RuntimeError(f"Invalid cast target {target}")
-RuntimeError: Invalid cast target record
 ==================================================
 Test: E13_scan_non_string_target.txt
-ExitCode: -999
-TimedOut: True (>15.0s)
+ExitCode: 0
 Expected:
  - INCORRECT-PARAMETER-TYPE ERROR
 Actual:
-[TIMEOUT] Exceeded 15.0 seconds. Process terminated.
 Compilation failed with the following error:
 INCORRECT-PARAMETER-TYPE ERROR found in line 3: "scan" expects parameter of type "str" to be passed but "int" was received
 --------------------------------------------------
@@ -444,74 +281,24 @@ record A {
 --------------------------------------------------
 ==================================================
 Test: E15_array_write_oob_runtime.txt
-ExitCode: 1
+ExitCode: 0
 Expected:
  - Array index out of bounds
 Actual:
-Traceback (most recent call last):
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
-    interpreter.run()
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
-    self.exec_block(self.ast.main_block, self.global_frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
-    self.exec_stmt(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 107, in exec_stmt
-    self.exec_assignment(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 171, in exec_assignment
-    self.set_array_element(stmt.lval, value, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 350, in set_array_element
-    raise RuntimeError("Array index out of bounds")
-RuntimeError: Array index out of bounds
+Array index out of bounds
 ==================================================
 Test: E16_array_assignment_shape_mismatch_runtime.txt
-ExitCode: 1
+ExitCode: 0
 Expected:
  - Array assignment shape mismatch
 Actual:
-Traceback (most recent call last):
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
-    interpreter.run()
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
-    self.exec_block(self.ast.main_block, self.global_frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
-    self.exec_stmt(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 107, in exec_stmt
-    self.exec_assignment(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 164, in exec_assignment
-    raise RuntimeError(
-RuntimeError: Array assignment shape mismatch: expected (2,), got (3,)
+Array assignment shape mismatch: expected (2,), got (3,)
 ==================================================
 Test: E17_array_return_shape_mismatch_runtime.txt
-ExitCode: 1
+ExitCode: 0
 Expected:
  - Invalid array return in "bad"
 Actual:
-Traceback (most recent call last):
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 313, in eval_call
-    self.exec_block(func.body, fn_frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
-    self.exec_stmt(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 121, in exec_stmt
-    raise ReturnSignal(
-interpreter.ReturnSignal: [0, 0, 0]
-During handling of the above exception, another exception occurred:
-Traceback (most recent call last):
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\main.py", line 93, in <module>
-    interpreter.run()
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 92, in run
-    self.exec_block(self.ast.main_block, self.global_frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 97, in exec_block
-    self.exec_stmt(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 107, in exec_stmt
-    self.exec_assignment(stmt, frame)
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 153, in exec_assignment
-    value = self.eval_expr(stmt.rval, frame)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 253, in eval_expr
-    return self.eval_call(expr, frame)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\chris\Desktop\opesyemulator\CSC617M-Interpreter\interpreter.py", line 319, in eval_call
-    raise RuntimeError(
-RuntimeError: Invalid array return in "bad": expected shape (2,), got (3,)
+Invalid array return in "bad": expected shape (2,), got (3,)
 ==================================================
 Finished 31 test case(s).

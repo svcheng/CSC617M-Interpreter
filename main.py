@@ -8,8 +8,9 @@ from abstract_syntax_tree.aux_classes import Scope
 from abstract_syntax_tree.program import Program
 from ast_construction import ASTConstructor
 from errors import CustomError
-from scanner import scan
 from interpreter import Interpreter
+from scanner import scan
+
 
 def print_ast(node, indent=0):
     pad = "  " * indent
@@ -69,30 +70,18 @@ if __name__ == "__main__":
     )
     parse_tree = parser.parse(program_str)
 
-    # print("=========================== Parse Tree ===========================")
-    # print(parse_tree.pretty())
-
     # create AST
     ast = ASTConstructor(program_str).transform(parse_tree)
 
-    # perform "compile time" (pre-execution) syntax and semantic checking
     try:
+        # perform "compile time" (pre-execution) syntax and semantic checking
         analysis(ast)
-
-        # print(
-        #     "=========================== Abstract Syntax Tree ==========================="
-        # )
-        # print_ast(ast)
-
-        
-        interpreter = Interpreter(ast, debug=True)
+        interpreter = Interpreter(ast, debug=False)
         interpreter.run()
-
     except CustomError as e:
         print("Compilation failed with the following error:")
         print(e)
-    except Exception as e: # if this case is reached there is a bug (in our program)
-        raise e  
-
-    
-
+    except RuntimeError as e:
+        print(e)
+    except Exception as e:  # if this case is reached there is a bug (in our program)
+        raise e
