@@ -50,6 +50,18 @@ class Frame:
         raise RuntimeError(f"Variable '{name}' not found")
 
     def assign(self, name: str, value: Any, constant: bool = False):
+        # If this var already exists in any scope, assign there instead of shadowing.
+        frame = self
+        while frame is not None:
+            if name in frame.values:
+                if name in frame.constants:
+                    raise RuntimeError(f"Cannot reassign constant '{name}'")
+                frame.values[name] = value
+                frame.initialized.add(name)
+                return
+            frame = frame.parent
+
+        # Not found anywhere: create in current frame (as before)
         if name in self.constants and name in self.values:
             raise RuntimeError(f"Cannot reassign constant '{name}'")
         self.values[name] = value
