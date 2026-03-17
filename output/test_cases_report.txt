@@ -129,6 +129,54 @@ Actual:
 7
 8
 ==================================================
+Test: T15_scan_input.txt
+ExitCode: 0
+Expected:
+Hello!!!
+Actual:
+Hello!!!
+==================================================
+Test: T16_void_function.txt
+ExitCode: 0
+Expected:
+3
+3
+Actual:
+3
+3
+==================================================
+Test: T17_function_calling_function.txt
+ExitCode: 0
+Expected:
+5
+Actual:
+5
+==================================================
+Test: T18_function_multiple_calls.txt
+ExitCode: 0
+Expected:
+2
+3
+4
+Actual:
+2
+3
+4
+==================================================
+Test: T19_recursion_factorial.txt
+ExitCode: 0
+Expected:
+120
+Actual:
+120
+==================================================
+Test: T20_scope_assignment_persistence.txt
+ExitCode: 0
+Expected:
+2
+Actual:
+2
+==================================================
 Test: E01_wrong_param_count.txt
 ExitCode: 0
 Expected:
@@ -309,4 +357,4 @@ Expected:
 Actual:
 Invalid array return in "bad": expected shape (2,), got (3,)
 ==================================================
-Finished 31 test case(s).
+Finished 37 test case(s).

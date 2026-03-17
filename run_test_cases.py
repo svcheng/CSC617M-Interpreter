@@ -38,6 +38,24 @@ CASES: list[dict] = [
     {"file": "T12_multi_dim_array.txt", "mode": "exact", "expected": "6"},
     {"file": "T13_casts_valid.txt", "mode": "exact", "expected": "123\n10.0\nTrue\n6"},
     {"file": "T14_function_return_array_valid.txt", "mode": "exact", "expected": "7\n8"},
+    {"file": "T15_scan_input.txt", "mode": "exact", "expected": "Hello!!!"},
+    {
+        "file": "T16_void_function.txt",
+        "mode": "exact",
+        "expected": "3\n3",
+    },
+    {"file": "T17_function_calling_function.txt", "mode": "exact", "expected": "5"},
+    {
+        "file": "T18_function_multiple_calls.txt",
+        "mode": "exact",
+        "expected": "2\n3\n4",
+    },
+    {"file": "T19_recursion_factorial.txt", "mode": "exact", "expected": "120"},
+    {
+        "file": "T20_scope_assignment_persistence.txt",
+        "mode": "exact",
+        "expected": "2",
+    },
     {
         "file": "E01_wrong_param_count.txt",
         "mode": "contains",
@@ -144,11 +162,15 @@ def main() -> int:
         filename = case["file"]
         test_path = TEST_DIR / filename
 
+        # some test cases require input; provide it if needed
+        input_data = "Hello" if filename == "T15_scan_input.txt" else None
+
         print(f"[{idx}/{total}] Running {filename} ...")
         timed_out = False
         try:
             proc = subprocess.run(
                 ["python", "main.py", str(test_path)],
+                input=input_data,
                 capture_output=True,
                 text=True,
                 encoding="utf-8",

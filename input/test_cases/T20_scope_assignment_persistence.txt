@@ -1,0 +1,8 @@
+main: {
+    var x: int;
+    x = 1;
+    if (true) {
+        x = 2;
+    }
+    print(x);
+}

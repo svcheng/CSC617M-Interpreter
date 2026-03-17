@@ -1,0 +1,11 @@
+int inc(x: int) {
+    return x + 1;
+}
+
+int twice(x: int) {
+    return inc(inc(x));
+}
+
+main: {
+    print(twice(3));
+}

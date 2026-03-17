@@ -1,0 +1,9 @@
+int add_one(x: int) {
+    return x + 1;
+}
+
+main: {
+    print(add_one(1));
+    print(add_one(2));
+    print(add_one(3));
+}

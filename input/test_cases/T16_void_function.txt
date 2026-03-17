@@ -1,0 +1,8 @@
+void say_twice(x: int) {
+    print(x);
+    print(x);
+}
+
+main: {
+    say_twice(3);
+}
