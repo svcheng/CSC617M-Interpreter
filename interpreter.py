@@ -101,6 +101,7 @@ class Interpreter:
             print(msg)
 
     def run(self):
+        self.trace("=========================== STARTING PROGRAM EXECUTION===========================")
         self.exec_block(self.ast.main_block, self.global_frame)
 
     # -------- statement execution --------

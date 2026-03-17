@@ -42,21 +42,15 @@ def print_ast(node, indent=0):
 
 
 def analysis(ast: Program):
-    try:
-        ast.init_scope(Scope(None))
-        ast.build_type_table()
-        ast.build_func_table()
-        ast.check_misplaced_returns()
-        ast.build_var_tables()
-        ast.check_types()
-        ast.check_returns()
-        ast.check_null_references()
-        ast.ensure_exhaustive_returns()
-    except CustomError as e:
-        print("Compilation failed with the following error:")
-        print(e)
-    except Exception as e:  # if this case is reached there is a bug (in our program)
-        raise e
+    ast.init_scope(Scope(None))
+    ast.build_type_table()
+    ast.build_func_table()
+    ast.check_misplaced_returns()
+    ast.build_var_tables()
+    ast.check_types()
+    ast.check_returns()
+    ast.check_null_references()
+    ast.ensure_exhaustive_returns()
 
 
 if __name__ == "__main__":
@@ -82,12 +76,23 @@ if __name__ == "__main__":
     ast = ASTConstructor(program_str).transform(parse_tree)
 
     # perform "compile time" (pre-execution) syntax and semantic checking
-    analysis(ast)
+    try:
+        analysis(ast)
 
-    # print(
-    #     "=========================== Abstract Syntax Tree ==========================="
-    # )
-    # print_ast(ast)
+        # print(
+        #     "=========================== Abstract Syntax Tree ==========================="
+        # )
+        # print_ast(ast)
 
-    interpreter = Interpreter(ast, debug=True)
-    interpreter.run()
+        
+        interpreter = Interpreter(ast, debug=True)
+        interpreter.run()
+
+    except CustomError as e:
+        print("Compilation failed with the following error:")
+        print(e)
+    except Exception as e: # if this case is reached there is a bug (in our program)
+        raise e  
+
+    
+
