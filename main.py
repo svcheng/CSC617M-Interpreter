@@ -4,11 +4,10 @@ from pathlib import Path
 
 from lark import Lark
 
-from abstract_syntax_tree.aux_classes import Scope
-from abstract_syntax_tree.program import Program
 from ast_construction import ASTConstructor
 from errors import CustomError
 from interpreter import Interpreter
+from language_service import analysis
 from scanner import scan
 
 
@@ -40,18 +39,6 @@ def print_ast(node, indent=0):
         #         print_ast(item, indent + 2)
         else:
             print_ast(value, indent + 2)
-
-
-def analysis(ast: Program):
-    ast.init_scope(Scope(None))
-    ast.build_type_table()
-    ast.build_func_table()
-    ast.check_misplaced_returns()
-    ast.build_var_tables()
-    ast.check_types()
-    ast.check_returns()
-    ast.check_null_references()
-    ast.ensure_exhaustive_returns()
 
 
 if __name__ == "__main__":
