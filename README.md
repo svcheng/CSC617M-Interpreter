@@ -8,3 +8,9 @@
 - The `abstract_syntax_tree` submodule contains class definitions, each corresopnding to a type of node in the AST, as well as helper classes and functions
 - `errors.py` contains custom errors
 - `main.py` - the main entry point for the interpreter
+- `language_service.py` exposes reusable tokenization, validation, and execution helpers for tooling
+- `ide.py` launches the IDE for the language
+
+## Running The IDE
+- Ensure Python, Tkinter, and `lark` are available in your environment
+- Launch the IDE with `python ide.py`

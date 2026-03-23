@@ -1,10 +1,10 @@
 # interpreter.py
 
 from __future__ import annotations
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from abstract_syntax_tree.program import Program
-from abstract_syntax_tree.aux_classes import Scope
+from abstract_syntax_tree.aux_classes import MetaInfo, Scope
 from abstract_syntax_tree.assignment import Assignment
 from abstract_syntax_tree.var_dec import VarDec
 from abstract_syntax_tree.const_dec import ConstDec
@@ -82,19 +82,104 @@ class ReturnSignal(Exception):
         self.value = value
 
 
+class ExecutionRuntimeError(RuntimeError):
+    def __init__(self, message: str, line: Optional[int] = None):
+        self.line = line
+        self.raw_message = message
+        super().__init__(f"Line {line}: {message}" if line is not None else message)
+
+
 class Interpreter:
-    def __init__(self, ast: Program, debug: bool = False):
+    def __init__(
+        self,
+        ast: Program,
+        debug: bool = False,
+        output_callback: Optional[Callable[[str], None]] = None,
+        input_provider: Optional[Callable[[str], str]] = None,
+        statement_callback: Optional[
+            Callable[
+                [Optional[MetaInfo], str, str, dict[str, Any], list[dict[str, Any]]], None
+            ]
+        ] = None,
+    ):
         self.ast = ast
         self.global_frame = Frame(None)
         self.global_scope: Scope = ast.scope
         self.funcs = {str(f.name): f for f in self.ast.func_decs}
         self.debug = debug
+        self.output_callback = output_callback
+        self.input_provider = input_provider
+        self.statement_callback = statement_callback
+        self.call_stack: list[tuple[str, Frame]] = [("main", self.global_frame)]
 
     def snippet(self, node):
         mi = getattr(node, "meta_info", None)
         if mi is None:
             return repr(node)
         return mi.program_str[mi.start_pos : mi.end_pos].strip()
+
+    def compact_snippet(self, node):
+        return " ".join(self.snippet(node).split())
+
+    def format_value(self, value: Any):
+        return repr(value)
+
+    def emit_output(self, value: Any):
+        rendered = str(value)
+        if self.output_callback is not None:
+            self.output_callback(rendered)
+        else:
+            print(rendered)
+
+    def request_input(self, target_name: str):
+        if self.input_provider is not None:
+            return self.input_provider(target_name)
+        return input()
+
+    def snapshot_frame(self, frame: Frame):
+        stack: list[Frame] = []
+        cur: Optional[Frame] = frame
+        while cur is not None:
+            stack.append(cur)
+            cur = cur.parent
+
+        snapshot: dict[str, Any] = {}
+        for scope_frame in reversed(stack):
+            snapshot.update(scope_frame.values)
+        return snapshot
+
+    def snapshot_call_stack(self):
+        frames: list[dict[str, Any]] = []
+        for depth, (name, frame) in enumerate(reversed(self.call_stack)):
+            frames.append(
+                {
+                    "depth": depth,
+                    "name": name,
+                    "locals": dict(frame.values),
+                }
+            )
+        return frames
+
+    def record_statement(self, stmt, frame: Frame, result: str):
+        if self.statement_callback is None:
+            return
+
+        meta_info = getattr(stmt, "meta_info", None)
+        self.statement_callback(
+            meta_info,
+            self.compact_snippet(stmt),
+            result,
+            self.snapshot_frame(frame),
+            self.snapshot_call_stack(),
+        )
+
+    def wrap_runtime_error(self, stmt, error: RuntimeError):
+        if isinstance(error, ExecutionRuntimeError):
+            return error
+
+        meta_info = getattr(stmt, "meta_info", None)
+        line = meta_info.start_line if meta_info is not None else None
+        return ExecutionRuntimeError(str(error), line=line)
 
     def trace(self, msg: str):
         if self.debug:
@@ -111,33 +196,48 @@ class Interpreter:
 
     def exec_stmt(self, stmt, frame: Frame):
         self.trace(f"EXEC {type(stmt).__name__}: {self.snippet(stmt)}")
-        match stmt:
-            case VarDec():
-                self.exec_var_dec(stmt, frame)
-            case ConstDec():
-                self.exec_const_dec(stmt, frame)
-            case Assignment():
-                self.exec_assignment(stmt, frame)
-            case PrintStmt():
-                self.exec_print(stmt, frame)
-            case ScanStmt():
-                self.exec_scan(stmt, frame)
-            case Conditional():
-                self.exec_conditional(stmt, frame)
-            case WhileLoop():
-                self.exec_while(stmt, frame)
-            case ForLoop():
-                self.exec_for(stmt, frame)
-            case RepeatLoop():
-                self.exec_repeat(stmt, frame)
-            case Invocation():
-                self.eval_call(stmt, frame)
-            case ReturnStmt():
-                raise ReturnSignal(
-                    self.eval_expr(stmt.value, frame) if stmt.value else None
-                )
-            case _:
-                raise NotImplementedError(f"Exec not implemented for {type(stmt)}")
+        try:
+            match stmt:
+                case VarDec():
+                    result = self.exec_var_dec(stmt, frame)
+                case ConstDec():
+                    result = self.exec_const_dec(stmt, frame)
+                case Assignment():
+                    result = self.exec_assignment(stmt, frame)
+                case PrintStmt():
+                    result = self.exec_print(stmt, frame)
+                case ScanStmt():
+                    result = self.exec_scan(stmt, frame)
+                case Conditional():
+                    result = self.exec_conditional(stmt, frame)
+                case WhileLoop():
+                    result = self.exec_while(stmt, frame)
+                case ForLoop():
+                    result = self.exec_for(stmt, frame)
+                case RepeatLoop():
+                    result = self.exec_repeat(stmt, frame)
+                case Invocation():
+                    call_result = self.eval_call(stmt, frame)
+                    result = f"call result = {self.format_value(call_result)}"
+                case ReturnStmt():
+                    value = self.eval_expr(stmt.value, frame) if stmt.value else None
+                    result = (
+                        f"return {self.format_value(value)}"
+                        if stmt.value
+                        else "return"
+                    )
+                    self.record_statement(stmt, frame, result)
+                    raise ReturnSignal(value)
+                case _:
+                    raise NotImplementedError(f"Exec not implemented for {type(stmt)}")
+        except ReturnSignal:
+            raise
+        except RuntimeError as error:
+            if not isinstance(error, ExecutionRuntimeError):
+                self.record_statement(stmt, frame, f"runtime error: {error}")
+            raise self.wrap_runtime_error(stmt, error) from error
+
+        self.record_statement(stmt, frame, result)
 
     def exec_var_dec(self, stmt: VarDec, frame: Frame):
         name = str(stmt.name)
@@ -146,23 +246,25 @@ class Interpreter:
             if isinstance(typ, ArrayType):
                 value = self.make_array_value(typ, frame)
                 frame.assign(name, value, constant=False)
-                return
+                return f"{name} = {self.format_value(value)}"
             if str(typ) not in {str(INT), str(FLOAT), str(BOOL), str(CHAR), str(STR)}:
                 # record type: auto-initialize with defaults
                 value = self.make_record_value(str(typ))
                 frame.assign(name, value, constant=False)
-                return
+                return f"{name} = {self.format_value(value)}"
         if stmt.init_value is not None:
             value = self.eval_expr(stmt.init_value, frame)
             frame.assign(name, value, constant=False)
-            return
+            return f"{name} = {self.format_value(value)}"
         # uninitialized basic variable:
         frame.assign(name, None, constant=False)
+        return f"{name} = {self.format_value(None)}"
 
     def exec_const_dec(self, stmt: ConstDec, frame: Frame):
         name = str(stmt.name)
         value = self.eval_expr(stmt.value, frame)
         frame.assign(name, value, constant=True)
+        return f"const {name} = {self.format_value(value)}"
 
     def exec_assignment(self, stmt: Assignment, frame: Frame):
         value = self.eval_expr(stmt.rval, frame)
@@ -186,17 +288,21 @@ class Interpreter:
                 self.set_array_element(stmt.lval, value, frame)
             case _:
                 raise RuntimeError("Unsupported l-value")
+        return f"{self.compact_snippet(stmt.lval)} = {self.format_value(value)}"
 
     def exec_print(self, stmt: PrintStmt, frame: Frame):
         value = self.eval_expr(stmt.value, frame)
-        print(value)
+        self.emit_output(value)
+        return f"printed {self.format_value(value)}"
 
     def exec_scan(self, stmt: ScanStmt, frame: Frame):
         target = stmt.lval
-        value = input()
+        target_name = self.compact_snippet(target)
+        value = self.request_input(target_name)
         if isinstance(target, Identifier):
             name = str(target.name)
             frame.assign(name, value, constant=False)
+            return f"{name} = {self.format_value(value)} (input)"
         else:
             raise RuntimeError("scan() only supports identifiers")
 
@@ -204,15 +310,21 @@ class Interpreter:
         cond = self.eval_expr(stmt.condition, frame)
         if cond:
             self.exec_block(stmt.then_block, Frame(frame))
+            return "condition = True; entered then-branch"
         elif stmt.else_block is not None:
             self.exec_block(stmt.else_block, Frame(frame))
+            return "condition = False; entered else-branch"
+        return "condition = False; no branch executed"
 
     def exec_while(self, stmt: WhileLoop, frame: Frame):
+        iterations = 0
         while self.eval_expr(stmt.cond, frame):
             try:
                 self.exec_block(stmt.body, Frame(frame))
             except ReturnSignal as r:
                 raise r
+            iterations += 1
+        return f"while loop completed after {iterations} iteration(s)"
 
     def exec_for(self, stmt: ForLoop, frame: Frame):
         start = self.eval_expr(stmt.range_start, frame)
@@ -225,22 +337,28 @@ class Interpreter:
         def condition(v):
             return v <= end if step >= 0 else v >= end
 
+        iterations = 0
         while condition(loop_frame.lookup(str(stmt.iterator_name.name))):
             try:
                 self.exec_block(stmt.body, loop_frame)
             except ReturnSignal as r:
                 raise r
+            iterations += 1
             cur = loop_frame.lookup(str(stmt.iterator_name.name))
             loop_frame.assign(str(stmt.iterator_name.name), cur + step, constant=False)
+        return f"for loop completed after {iterations} iteration(s)"
 
     def exec_repeat(self, stmt: RepeatLoop, frame: Frame):
+        iterations = 0
         while True:
             try:
-                self.exec_block(stmt.body, frame)   
+                self.exec_block(stmt.body, frame)
             except ReturnSignal as r:
                 raise r
+            iterations += 1
             if self.eval_expr(stmt.cond, frame):
                 break
+        return f"repeat loop completed after {iterations} iteration(s)"
 
     # -------- expression evaluation --------
     def eval_expr(self, expr, frame: Frame):
@@ -324,6 +442,7 @@ class Interpreter:
         for (arg_name, _), arg_expr in zip(func.args, expr.args):
             fn_frame.assign(str(arg_name.name), self.eval_expr(arg_expr, frame), constant=False)
 
+        self.call_stack.append((name, fn_frame))
         try:
             self.exec_block(func.body, fn_frame)
         except ReturnSignal as r:
@@ -335,6 +454,8 @@ class Interpreter:
                         f'Invalid array return in "{name}": expected shape {expected_shape}, got {actual_shape}'
                     )
             return r.value
+        finally:
+            self.call_stack.pop()
         return None
 
     def eval_arr_access(self, expr: ArrAccess, frame: Frame):
