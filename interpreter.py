@@ -1,6 +1,7 @@
 # interpreter.py
 
 from __future__ import annotations
+from copy import deepcopy
 from typing import Any, Callable, Optional
 
 from abstract_syntax_tree.program import Program
@@ -146,7 +147,7 @@ class Interpreter:
         snapshot: dict[str, Any] = {}
         for scope_frame in reversed(stack):
             snapshot.update(scope_frame.values)
-        return snapshot
+        return deepcopy(snapshot)
 
     def snapshot_call_stack(self):
         frames: list[dict[str, Any]] = []
@@ -155,12 +156,12 @@ class Interpreter:
                 {
                     "depth": depth,
                     "name": name,
-                    "locals": dict(frame.values),
+                    "locals": deepcopy(frame.values),
                 }
             )
         return frames
 
-    def record_statement(self, stmt, frame: Frame, result: str):
+    def record_statement(self, stmt, result: str, snapshot: dict[str, Any], call_stack):
         if self.statement_callback is None:
             return
 
@@ -169,8 +170,8 @@ class Interpreter:
             meta_info,
             self.compact_snippet(stmt),
             result,
-            self.snapshot_frame(frame),
-            self.snapshot_call_stack(),
+            snapshot,
+            call_stack,
         )
 
     def wrap_runtime_error(self, stmt, error: RuntimeError):
@@ -196,6 +197,8 @@ class Interpreter:
 
     def exec_stmt(self, stmt, frame: Frame):
         self.trace(f"EXEC {type(stmt).__name__}: {self.snippet(stmt)}")
+        before_snapshot = self.snapshot_frame(frame)
+        before_call_stack = self.snapshot_call_stack()
         try:
             match stmt:
                 case VarDec():
@@ -226,7 +229,7 @@ class Interpreter:
                         if stmt.value
                         else "return"
                     )
-                    self.record_statement(stmt, frame, result)
+                    self.record_statement(stmt, result, before_snapshot, before_call_stack)
                     raise ReturnSignal(value)
                 case _:
                     raise NotImplementedError(f"Exec not implemented for {type(stmt)}")
@@ -234,10 +237,15 @@ class Interpreter:
             raise
         except RuntimeError as error:
             if not isinstance(error, ExecutionRuntimeError):
-                self.record_statement(stmt, frame, f"runtime error: {error}")
+                self.record_statement(
+                    stmt,
+                    f"runtime error: {error}",
+                    before_snapshot,
+                    before_call_stack,
+                )
             raise self.wrap_runtime_error(stmt, error) from error
 
-        self.record_statement(stmt, frame, result)
+        self.record_statement(stmt, result, before_snapshot, before_call_stack)
 
     def exec_var_dec(self, stmt: VarDec, frame: Frame):
         name = str(stmt.name)

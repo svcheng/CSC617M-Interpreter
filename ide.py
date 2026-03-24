@@ -965,7 +965,7 @@ class IDEApp:
             show="headings",
         )
         self.watch_tree.heading("name", text="Expression")
-        self.watch_tree.heading("value", text="Value At Step")
+        self.watch_tree.heading("value", text="Value Before Step")
         self.watch_tree.column("name", width=150, anchor="w")
         self.watch_tree.column("value", width=180, anchor="w")
         self.watch_tree.grid(row=0, column=0, sticky="nsew")
